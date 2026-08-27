@@ -1,0 +1,87 @@
+services:
+  # ============================================
+  # API Principal
+  # ============================================
+  api:
+    build: .
+    container_name: data-hub-api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # Worker Celery (tarefas assíncronas)
+  # ============================================
+  worker:
+    build: .
+    container_name: data-hub-worker
+    command: celery -A src.workers.celery_app worker --loglevel=info --concurrency=2
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ============================================
+  # Redis (broker do Celery + cache)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: data-hub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # ============================================
+  # Evolution API (WhatsApp)
+  # Descomente pra usar WhatsApp
+  # ============================================
+  # evolution:
+  #   image: atendai/evolution-api:v2.2.3
+  #   container_name: data-hub-evolution
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - SERVER_URL=http://localhost:8080
+  #     - AUTHENTICATION_API_KEY=${WHATSAPP_API_KEY:-changeme}
+  #     - DATABASE_ENABLED=true
+  #     - DATABASE_PROVIDER=postgresql
+  #     - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@postgres:5432/evolution
+  #   volumes:
+  #     - evolution_data:/evolution/store
+  #   restart: unless-stopped
+
+  # ============================================
+  # PostgreSQL (opcional — pra testar o adapter)
+  # Descomente pra ter um PG local pra testar
+  # ============================================
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: data-hub-postgres
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     POSTGRES_DB: testdb
+  #     POSTGRES_USER: testuser
+  #     POSTGRES_PASSWORD: testpass
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+volumes:
+  redis_data:
+  # postgres_data:
+  # evolution_data:
