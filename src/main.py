@@ -218,6 +218,27 @@ app.include_router(routes_settings.router)
 app.include_router(routes_llm_providers.router)
 
 
+# ── Evolution API Webhook Receiver ──────────────────────────────
+from fastapi import Request
+
+@app.post("/whatsapp/webhook")
+async def whatsapp_webhook(request: Request):
+    """Receive Evolution API webhook events for WhatsApp messages."""
+    import logging
+    _wlog = logging.getLogger("whatsapp.webhook")
+    try:
+        payload = await request.json()
+        _wlog.info(f"Webhook received: event={payload.get('event')}, instance={payload.get('instance')}")
+
+        from src.channels.whatsapp_receiver import handle_webhook_event
+        await handle_webhook_event(payload)
+
+        return {"status": "ok"}
+    except Exception as e:
+        _wlog.error(f"Webhook processing error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
 @app.get("/health")
 async def health():
     """Health check do hub."""
