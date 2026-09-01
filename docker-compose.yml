@@ -12,7 +12,11 @@ services:
       - ./data:/app/data
     depends_on:
       - redis
+      - postgres
     restart: unless-stopped
+    labels:
+      - "logging=enabled"
+      - "service=datahub-api"
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
       interval: 30s
@@ -47,41 +51,110 @@ services:
 
   # ============================================
   # Evolution API (WhatsApp)
-  # Descomente pra usar WhatsApp
   # ============================================
-  # evolution:
-  #   image: atendai/evolution-api:v2.2.3
-  #   container_name: data-hub-evolution
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     - SERVER_URL=http://localhost:8080
-  #     - AUTHENTICATION_API_KEY=${WHATSAPP_API_KEY:-changeme}
-  #     - DATABASE_ENABLED=true
-  #     - DATABASE_PROVIDER=postgresql
-  #     - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@postgres:5432/evolution
-  #   volumes:
-  #     - evolution_data:/evolution/store
-  #   restart: unless-stopped
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: data-hub-evolution
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=http://evolution:8080
+      - AUTHENTICATION_API_KEY=${WHATSAPP_API_KEY:-changeme}
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://testuser:testpass@postgres:5432/evolution
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - LOG_LEVEL=INFO
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - evolution_data:/evolution/instances
+    restart: unless-stopped
 
   # ============================================
-  # PostgreSQL (opcional — pra testar o adapter)
-  # Descomente pra ter um PG local pra testar
+  # PostgreSQL — pra testar o adapter
   # ============================================
-  # postgres:
-  #   image: postgres:16-alpine
-  #   container_name: data-hub-postgres
-  #   ports:
-  #     - "5432:5432"
-  #   environment:
-  #     POSTGRES_DB: testdb
-  #     POSTGRES_USER: testuser
-  #     POSTGRES_PASSWORD: testpass
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    container_name: data-hub-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ============================================
+  # Loki — Log aggregation (OPCIONAL)
+  # Ativar com: docker compose --profile logging up -d
+  # ============================================
+  loki:
+    profiles: ["logging"]
+    image: grafana/loki:3.4.2
+    container_name: data-hub-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./grafana/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Promtail — Log collector (OPCIONAL)
+  # Ativar com: docker compose --profile logging up -d
+  # ============================================
+  promtail:
+    profiles: ["logging"]
+    image: grafana/promtail:3.4.2
+    container_name: data-hub-promtail
+    volumes:
+      - ./grafana/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ============================================
+  # Grafana — Dashboards & Visualization
+  # ============================================
+  grafana:
+    profiles: ["logging"]
+    image: grafana/grafana:11.1.0
+    container_name: data-hub-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=datahub
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+    restart: unless-stopped
+    labels:
+      - "logging=enabled"
+      - "service=grafana"
 
 volumes:
   redis_data:
-  # postgres_data:
-  # evolution_data:
+  postgres_data:
+  evolution_data:
+  loki_data:
+  grafana_data:

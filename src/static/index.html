@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090a;--sidebar:#0f1011;--card:#191a1b;--card-hover:#1f2022;
+  --border:rgba(255,255,255,.08);--border-subtle:rgba(255,255,255,.05);
+  --text:#f7f8f8;--text-secondary:#d0d6e0;--text-muted:#8a8f98;--text-subtle:#62666d;
+  --accent:#5e6ad2;--accent-hover:#7170ff;--accent-light:rgba(94,106,210,.12);
+  --success:#2da44e;--danger:#cf222e;--warning:#bf8700;
+  --radius:8px;--radius-sm:6px;--radius-lg:12px;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --font-feature:'cv01','ss03';
+}
+html,body{height:100%;font-family:var(--font);font-feature-settings:var(--font-feature);
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow:hidden}
+a{color:var(--accent-hover);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2)}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:240px;background:var(--sidebar);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-header{padding:20px 16px 12px;display:flex;align-items:center;gap:10px}
+.sidebar-logo{width:28px;height:28px;background:var(--accent);border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff}
+.sidebar-title{font-size:15px;font-weight:590;letter-spacing:-.01em}
+.sidebar-nav{flex:1;padding:4px 8px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);
+  cursor:pointer;color:var(--text-muted);transition:all .15s;font-weight:500;font-size:13px;
+  border-left:2px solid transparent;margin-bottom:1px}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--text);background:var(--accent-light);border-left-color:var(--accent)}
+.nav-icon{width:20px;text-align:center;font-size:18px;flex-shrink:0}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text-subtle)}
+.sidebar-footer span{cursor:pointer;transition:color .15s}
+.sidebar-footer span:hover{color:var(--text-muted)}
+
+.main{flex:1;overflow-y:auto;padding:32px 40px}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:28px}
+.page-title{font-size:22px;font-weight:590;letter-spacing:-.02em;margin-bottom:4px}
+.page-subtitle{color:var(--text-muted);font-size:13px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;transition:border-color .15s}
+.card:hover{border-color:rgba(255,255,255,.12)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-weight:500;font-size:14px}
+
+/* Stat cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.stat-label{font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:590;letter-spacing:-.03em;line-height:1}
+.stat-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;
+  border-radius:10px;font-weight:500;margin-top:8px}
+.stat-badge.on{background:rgba(45,164,78,.15);color:var(--success)}
+.stat-badge.off{background:rgba(207,34,46,.15);color:var(--danger)}
+
+/* Tables */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 16px;font-size:11px;font-weight:500;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.02);white-space:nowrap}
+td{padding:10px 16px;border-bottom:1px solid var(--border-subtle);font-size:13px;
+  color:var(--text-secondary);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(255,255,255,.02);
+  color:var(--text-secondary);transition:all .15s;font-family:var(--font)}
+.btn:hover{background:rgba(255,255,255,.06);color:var(--text);border-color:rgba(255,255,255,.12)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-danger{color:var(--danger)}
+.btn-danger:hover{background:rgba(207,34,46,.1);border-color:rgba(207,34,46,.3)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center}
+
+/* Forms */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);
+  font-size:13px;font-family:var(--font);transition:border-color .15s;outline:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-textarea{resize:vertical;min-height:100px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;line-height:1.6}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.form-select option{background:var(--card);color:var(--text)}
+
+/* Tags / badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.badge-accent{background:var(--accent-light);color:var(--accent-hover)}
+.badge-success{background:rgba(45,164,78,.12);color:var(--success)}
+.badge-danger{background:rgba(207,34,46,.12);color:var(--danger)}
+.badge-muted{background:rgba(255,255,255,.05);color:var(--text-muted)}
+
+/* Status dot */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot-green{background:var(--success)}
+.dot-red{background:var(--danger)}
+.dot-yellow{background:var(--warning)}
+.dot-muted{background:var(--text-subtle)}
+
+/* Toggle */
+.toggle{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.1);
+  cursor:pointer;position:relative;transition:background .2s}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:#fff;top:2px;left:2px;transition:transform .2s}
+.toggle.on::after{transform:translateX(16px)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;
+  justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:24px;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto;
+  transform:translateY(8px);transition:transform .2s}
+.modal-overlay.show .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:590}
+.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
+.modal-close:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;
+  border-top:1px solid var(--border)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;
+  border-top:1px solid var(--border)}
+
+/* Toast */
+.toast-container{position:fixed;bottom:16px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  animation:toastIn .2s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:320px}
+.toast.success{border-color:rgba(45,164,78,.3);color:var(--success)}
+.toast.error{border-color:rgba(207,34,46,.3);color:var(--danger)}
+.toast.info{border-color:rgba(94,106,210,.3);color:var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Confirm Modal */
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;
+  justify-content:center;z-index:3000;opacity:0;pointer-events:none;transition:opacity .2s}
+.confirm-modal.show{opacity:1;pointer-events:auto}
+.confirm-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:24px;width:380px;max-width:90vw;transform:scale(.95);transition:transform .2s}
+.confirm-modal.show .confirm-box{transform:scale(1)}
+.confirm-title{font-size:16px;font-weight:590;margin-bottom:8px}
+.confirm-message{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5}
+.confirm-actions{display:flex;justify-content:flex-end;gap:8px}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 20px;color:var(--text-muted)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.5}
+.empty-text{font-size:13px;margin-bottom:16px}
+
+/* Query console */
+.query-console{display:grid;grid-template-columns:1fr 360px;gap:16px;height:calc(100vh - 180px)}
+.query-main{display:flex;flex-direction:column;gap:16px;min-height:0;overflow:hidden}
+.query-sidebar{display:flex;flex-direction:column;gap:0;min-height:0}
+.schema-table{font-size:12px;font-family:'SF Mono',Menlo,Consolas,monospace}
+.schema-table-item{padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;
+  color:var(--text-muted);transition:all .15s;display:flex;align-items:center;gap:6px}
+.schema-table-item:hover{background:rgba(255,255,255,.04);color:var(--text-secondary)}
+.schema-table-item.active{background:var(--accent-light);color:var(--accent-hover)}
+.schema-toggle{display:inline-block;width:14px;text-align:center;font-size:10px;
+  color:var(--text-subtle);transition:transform .15s;flex-shrink:0}
+.schema-toggle.open{transform:rotate(90deg)}
+.schema-cols{display:none;padding:0;margin:0}
+.schema-cols.open{display:block}
+.schema-col{padding:4px 10px 4px 36px;font-size:11px;color:var(--text-subtle)}
+.schema-col .type{color:var(--text-subtle);margin-left:4px;font-size:10px}
+
+/* SQL result */
+.result-table{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px}
+.result-table th{font-family:var(--font);font-size:11px}
+.result-info{font-size:12px;color:var(--text-muted);margin-top:8px}
+.result-info span{color:var(--accent-hover)}
+
+/* Loading */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.1);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:absolute;inset:0;background:rgba(8,9,10,.7);display:flex;
+  align-items:center;justify-content:center;z-index:10;border-radius:var(--radius)}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-240px;height:100%;z-index:100;transition:left .2s}
+  .sidebar.open{left:0}
+  .main{padding:20px 16px}
+  .query-console{grid-template-columns:1fr}
+  .query-sidebar{display:none}
+  .form-row{grid-template-columns:1fr}
+  .menu-toggle{display:flex!important}
+}
+.menu-toggle{display:none;width:32px;height:32px;align-items:center;justify-content:center;
+  background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted);
+  cursor:pointer;font-size:16px;margin-bottom:16px}
+
+/* Activity log */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
+.activity-item:last-child{border-bottom:none}
+.activity-time{font-size:11px;color:var(--text-subtle);min-width:70px;font-family:'SF Mono',Menlo,Consolas,monospace}
+.activity-msg{font-size:13px;color:var(--text-secondary);flex:1}
+.activity-method{font-size:11px;min-width:56px}
+
+/* Channel card */
+.channel-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--radius)}
+.channel-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;
+  align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.channel-info{flex:1}
+.channel-name{font-weight:500;font-size:14px;margin-bottom:2px}
+.channel-status{font-size:12px;color:var(--text-muted)}
+.channel-actions{display:flex;gap:8px}
+
+/* Login screen */
+.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:3000;display:flex;
+  align-items:center;justify-content:center;transition:opacity .3s}
+.login-overlay.hidden{opacity:0;pointer-events:none}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:40px;width:400px;max-width:90vw}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center}
+.login-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff}
+.login-logo-text{font-size:22px;font-weight:590;letter-spacing:-.02em}
+.login-title{font-size:16px;font-weight:500;margin-bottom:4px;text-align:center}
+.login-subtitle{font-size:13px;color:var(--text-muted);margin-bottom:24px;text-align:center}
+.login-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px}
+.login-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;
+  color:var(--text-muted);border-bottom:2px solid transparent;transition:all .15s}
+.login-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.login-error{background:rgba(207,34,46,.1);border:1px solid rgba(207,34,46,.3);border-radius:var(--radius-sm);
+  padding:10px 14px;font-size:13px;color:var(--danger);margin-bottom:16px;display:none}
+</style>
+</head>
+<body>
+<!-- Login Screen -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">⬡</div>
+      <span class="login-logo-text">Data Hub</span>
+    </div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchAuthTab('login')">Entrar</div>
+      <div class="login-tab" onclick="switchAuthTab('register')">Registrar</div>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <!-- Login form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Usuário</label>
+        <input class="form-input" id="auth-username" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()">Entrar</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-subtle)">
+        Default: admin / admin123
+      </div>
+    </div>
+    <!-- Register form -->
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Usuário</label>
+        <input class="form-input" id="reg-username" placeholder="seu_usuario" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="reg-email" type="email" placeholder="email@exemplo.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input class="form-input" id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doRegister()">Criar Conta</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">⬡</div>
+      <span class="sidebar-title">Data Hub</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item" data-page="dashboard">
+        <span class="nav-icon">◉</span> <span data-i18n="nav_dashboard">Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="connections">
+        <span class="nav-icon">◎</span> <span data-i18n="nav_connections">Conexões</span>
+      </div>
+      <div class="nav-item" data-page="rules">
+        <span class="nav-icon">◇</span> <span data-i18n="nav_rules">Regras</span>
+      </div>
+      <div class="nav-item" data-page="query">
+        <span class="nav-icon">▹</span> <span data-i18n="nav_query">Query</span>
+      </div>
+      <div class="nav-item" data-page="channels">
+        <span class="nav-icon">◆</span> <span data-i18n="nav_channels">Canais</span>
+      </div>
+      <div class="nav-item" data-page="schemas">
+        <span class="nav-icon">◇</span> <span data-i18n="nav_schemas">Schemas</span>
+      </div>
+      <div class="nav-item" data-page="alerts">
+        <span class="nav-icon">◈</span> <span data-i18n="nav_alerts">Alertas</span>
+      </div>
+      <div class="nav-item" data-page="activity">
+        <span class="nav-icon">≡</span> <span data-i18n="nav_activity">Atividade</span>
+      </div>
+      <div class="nav-item" data-page="config">
+        <span class="nav-icon">⚙</span> <span>Config</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span onclick="openSettings()">⚙</span>
+      <span id="lang-toggle" onclick="toggleLang()" style="cursor:pointer;font-size:11px;font-weight:600;color:var(--accent);padding:2px 6px;border:1px solid var(--accent);border-radius:4px" title="Toggle language">EN</span>
+      <span id="auth-user-info" style="display:flex;align-items:center;gap:8px">
+        <span id="auth-username-display" style="font-size:12px;color:var(--text-muted)"></span>
+        <span onclick="doLogout()" style="cursor:pointer;font-size:11px;color:var(--danger)" title="Sair">⏻</span>
+      </span>
+      <span id="version">v0.1.0</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main">
+    <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title" data-i18n="dash_title">Dashboard</div>
+        <div class="page-subtitle" data-i18n="dash_subtitle">Visão geral do sistema</div>
+      </div>
+      <div class="stats-grid" id="dash-stats"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" data-i18n="dash_recent">Atividade Recente</div>
+        </div>
+        <div id="dash-activity"></div>
+      </div>
+    </div>
+
+    <!-- Connections -->
+    <div class="page" id="page-connections">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title" data-i18n="conn_title">Conexões</div>
+            <div class="page-subtitle" data-i18n="conn_subtitle">Bancos de dados e APIs conectados</div>
+          </div>
+          <button class="btn btn-primary" onclick="showModal('connection-modal')" data-i18n="conn_new">+ Nova Conexão</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Tipo</th><th>Status</th><th></th></tr></thead>
+          <tbody id="connections-table"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="connections-empty" style="display:none">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-text">Nenhuma conexão configurada</div>
+        <button class="btn btn-primary" onclick="showModal('connection-modal')">+ Adicionar Conexão</button>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="page" id="page-rules">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title" data-i18n="rule_title">Regras</div>
+            <div class="page-subtitle" data-i18n="rule_subtitle">Regras de intenção regex e LLM</div>
+          </div>
+          <button class="btn btn-primary" onclick="openNewRuleModal()" data-i18n="rule_new">+ Nova Regra</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Padrão</th><th>Conexão</th><th>Modo</th><th>Ativo</th><th></th></tr></thead>
+          <tbody id="rules-table"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="rules-empty" style="display:none">
+        <div class="empty-icon">⟐</div>
+        <div class="empty-text">Nenhuma regra configurada</div>
+        <button class="btn btn-primary" onclick="openNewRuleModal()">+ Criar Regra</button>
+      </div>
+    </div>
+
+    <!-- Query -->
+    <div class="page" id="page-query">
+      <div class="page-header">
+        <div class="page-title" data-i18n="query_title">Console SQL</div>
+        <div class="page-subtitle" data-i18n="query_subtitle">Execute SQL e explore schemas</div>
+      </div>
+      <div class="query-console">
+        <div class="query-main">
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-select" id="query-conn" style="width:200px" onchange="loadSchema()">
+              <option value="">Selecionar conexão...</option>
+            </select>
+            <button class="btn btn-primary" id="query-run-btn" onclick="runQuery()">▶ Executar</button>
+            <span style="flex:1"></span>
+            <span id="query-time" style="font-size:12px;color:var(--text-muted)"></span>
+          </div>
+          <textarea class="form-textarea" id="query-sql" placeholder="SELECT * FROM..." style="min-height:160px"></textarea>
+          <div class="card" style="flex:1;overflow:auto;position:relative" id="query-result-card">
+            <div class="card-header">
+              <div class="card-title">Resultado</div>
+              <span id="query-result-info" style="font-size:12px;color:var(--text-muted)"></span>
+            </div>
+            <div id="query-result"></div>
+          </div>
+        </div>
+        <div class="query-sidebar">
+          <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0">
+            <div class="card-header" style="padding:16px 16px 12px;margin-bottom:0;border-bottom:1px solid var(--border-subtle)">
+              <div class="card-title">Schema</div>
+            </div>
+            <div id="schema-tree" style="flex:1;overflow-y:auto;padding:0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channels -->
+    <div class="page" id="page-channels">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title" data-i18n="ch_title">Canais</div>
+            <div class="page-subtitle" data-i18n="ch_subtitle">Canais de comunicação ativos</div>
+          </div>
+          <button class="btn btn-primary" onclick="showModal('channel-modal')" data-i18n="ch_new">+ Novo Canal</button>
+        </div>
+      </div>
+      <div id="channels-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div class="empty" id="channels-empty" style="display:none">
+        <div class="empty-icon">◈</div>
+        <div class="empty-text">Nenhum canal configurado</div>
+        <button class="btn btn-primary" onclick="showModal('channel-modal')">+ Adicionar Canal</button>
+      </div>
+    </div>
+
+    <!-- Schemas -->
+    <div class="page" id="page-schemas">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title">Schemas IA</div>
+            <div class="page-subtitle">Configure quais schemas a IA usa e documente cada um</div>
+          </div>
+          <button class="btn btn-primary" onclick="syncSchemas()">↻ Sincronizar</button>
+        </div>
+      </div>
+      <!-- Contexto de Negócio -->
+      <div class="card" style="margin: 16px 0; padding: 20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:18px;color:var(--accent)">&#9670;</span>
+          <strong>Contexto do Negócio</strong>
+          <span style="color:var(--text-dim);font-size:13px;margin-left:8px">Explicações de regras de negócio que a IA usa pra gerar consultas</span>
+        </div>
+        <textarea id="business-context" rows="6" placeholder="Ex: CIP = Crédito Imobiliário por Prazo. Aproveitamento = (pago + integrado) / total de contratos. O banco é identificado pela coluna lender_name..."
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:6px;font-family:monospace;font-size:13px;resize:vertical"></textarea>
+        <div style="margin-top:8px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveBusinessContext()">Salvar Contexto</button>
+        </div>
+      </div>
+      <!-- Tabelas -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Conexão</th><th>Schema</th><th>Descrição</th><th>Status</th><th></th></tr></thead>
+          <tbody id="schemas-table"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="schemas-empty" style="display:none">
+        <div class="empty-icon">◇</div>
+        <div class="empty-text">Nenhum schema configurado</div>
+        <button class="btn btn-primary" onclick="syncSchemas()">Sincronizar Schemas</button>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title" data-i18n="alert_title">Alertas</div>
+            <div class="page-subtitle" data-i18n="alert_subtitle">Monitoramento automático de bancos</div>
+          </div>
+          <button class="btn btn-primary" onclick="openNewAlertModal()" data-i18n="alert_new">+ Nova Regra</button>
+        </div>
+      </div>
+      <!-- Stats cards -->
+      <div class="stats-grid" style="margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="alert_stat_total">Total</div>
+          <div class="stat-value" id="alert-stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="alert_stat_active">Ativas</div>
+          <div class="stat-value" id="alert-stat-active" style="color:var(--green)">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="alert_stat_triggers">Triggers Hoje</div>
+          <div class="stat-value" id="alert-stat-triggers" style="color:var(--red)">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" data-i18n="alert_stat_executions">Execuções Hoje</div>
+          <div class="stat-value" id="alert-stat-executions">0</div>
+        </div>
+      </div>
+      <div id="alerts-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <!-- Activity -->
+    <div class="page" id="page-activity">
+      <div class="page-header">
+        <div class="page-title" data-i18n="act_title">Atividade</div>
+        <div class="page-subtitle" data-i18n="act_subtitle">Log de consultas e processamento</div>
+      </div>
+      <div class="card" id="activity-log"></div>
+    </div>
+
+    <!-- Config Page -->
+    <div class="page" id="page-config">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Configurações</div>
+          <div class="page-subtitle">Provedores de IA e configurações gerais</div>
+        </div>
+      </div>
+
+      <!-- LLM Providers -->
+      <div class="card" style="margin: 16px 0; padding: 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px;color:var(--accent)">&#9670;</span>
+            <strong>Provedores de IA</strong>
+            <span style="color:var(--text-dim);font-size:13px;margin-left:8px">Configure qual IA usar pra gerar consultas</span>
+          </div>
+          <button class="btn btn-primary" onclick="showAddProvider()">+ Adicionar</button>
+        </div>
+        <div id="providers-list"></div>
+      </div>
+
+      <!-- Add/Edit Provider Modal -->
+      <div id="provider-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+        <div class="card" style="width:520px;max-height:90vh;overflow-y:auto;padding:24px">
+          <h3 id="provider-modal-title" style="margin:0 0 16px">Adicionar Provedor</h3>
+          <input type="hidden" id="provider-id">
+          <div style="display:grid;gap:12px">
+            <div>
+              <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Nome</label>
+              <input id="provider-name" placeholder="Ex: Meu Gemini" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Provedor</label>
+                <select id="provider-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic (Claude)</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="ollama">Ollama (Local)</option>
+                  <option value="custom">API Customizada</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Modelo</label>
+                <input id="provider-model" placeholder="Ex: gpt-4o-mini" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+              </div>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">API Key</label>
+              <input id="provider-apikey" type="password" placeholder="sk-..." style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">API Base (opcional)</label>
+              <input id="provider-apibase" placeholder="https://api.openai.com/v1" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Max Tokens</label>
+                <input id="provider-maxtokens" type="number" value="4000" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Temperature</label>
+                <input id="provider-temperature" type="number" value="0" min="0" max="2" step="0.1" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Padrão</label>
+                <select id="provider-default" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                  <option value="false">Não</option>
+                  <option value="true">Sim</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+            <button class="btn" onclick="hideProviderModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveProvider()">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- Confirm Modal -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Confirmar</div>
+    <div class="confirm-message" id="confirm-message">Tem certeza?</div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="confirmCancel()" data-i18n="btn_cancel">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmOk()" data-i18n="btn_confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Connection Modal -->
+<div class="modal-overlay" id="connection-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nova Conexão</div>
+      <button class="modal-close" onclick="hideModal('connection-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="conn-name" placeholder="ex: pg-vendas">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="conn-type">
+        <option value="postgres">PostgreSQL</option>
+        <option value="mysql">MySQL</option>
+        <option value="sqlite">SQLite</option>
+        <option value="mongodb">MongoDB</option>
+        <option value="api_rest">REST API</option>
+      </select>
+    </div>
+    <div id="conn-config-fields"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideModal('connection-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createConnection()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Connection Modal -->
+<div class="modal-overlay" id="edit-connection-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Editar Conexão</div>
+      <button class="modal-close" onclick="hideModal('edit-connection-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="edit-conn-name" placeholder="ex: pg-vendas">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="edit-conn-type">
+        <option value="postgres">PostgreSQL</option>
+        <option value="mysql">MySQL</option>
+        <option value="sqlite">SQLite</option>
+        <option value="mongodb">MongoDB</option>
+        <option value="api_rest">REST API</option>
+      </select>
+    </div>
+    <div id="edit-conn-config-fields"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideModal('edit-connection-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditConnection()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rule Modal -->
+<div class="modal-overlay" id="rule-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="rule-modal-title">Nova Regra</div>
+      <button class="modal-close" onclick="hideModal('rule-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="rule-name" placeholder="ex: vendas_hoje">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Padrão (Regex)</label>
+      <input class="form-input" id="rule-pattern" placeholder="ex: vendas?\s+hoje" style="font-family:monospace">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Conexão</label>
+      <select class="form-select" id="rule-conn"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Query Template</label>
+      <textarea class="form-textarea" id="rule-query" placeholder="SELECT * FROM vendas WHERE..." style="min-height:80px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideModal('rule-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="rule-modal-btn" onclick="saveRule()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Channel Modal -->
+<div class="modal-overlay" id="channel-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo Canal</div>
+      <button class="modal-close" onclick="hideModal('channel-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="ch-name" placeholder="ex: meu-bot">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="ch-type" onchange="updateChannelFields()">
+        <option value="telegram-bot">Telegram Bot</option>
+        <option value="whatsapp">WhatsApp (Evolution API)</option>
+        <option value="slack">Slack</option>
+        <option value="google_chat">Google Chat</option>
+        <option value="teams">Microsoft Teams</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Token / URL</label>
+      <input class="form-input" id="ch-token" placeholder="Token do bot ou URL do webhook">
+    </div>
+    <div id="ch-extra-fields"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideModal('channel-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createChannel()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<div class="modal-overlay" id="alert-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3 id="alert-modal-title" data-i18n="alert_modal_title">Nova Regra de Alerta</h3>
+      <button class="modal-close" onclick="hideModal('alert-modal')">✕</button>
+    </div>
+    <input type="hidden" id="alert-edit-id">
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_name">Nome</label>
+      <input class="form-input" id="alert-name" placeholder="Estoque Baixo">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_desc">Descrição</label>
+      <input class="form-input" id="alert-desc" placeholder="Alerta quando estoque < 10">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_connection">Conexão</label>
+      <select class="form-input" id="alert-connection"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_schedule_type">Tipo de Agendamento</label>
+      <select class="form-input" id="alert-schedule-type" onchange="updateScheduleUI()">
+        <option value="interval">Intervalo</option>
+        <option value="cron">Agendar (Cron)</option>
+      </select>
+    </div>
+    <!-- Intervalo -->
+    <div id="schedule-interval" class="form-row">
+      <div class="form-group" style="flex:1">
+        <label class="form-label" data-i18n="alert_form_interval">A cada</label>
+        <input class="form-input" id="alert-interval-value" type="number" value="5" min="1">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label" data-i18n="alert_form_interval_unit">Unidade</label>
+        <select class="form-input" id="alert-interval-unit">
+          <option value="minutes">Minutos</option>
+          <option value="hours">Horas</option>
+          <option value="days">Dias</option>
+        </select>
+      </div>
+    </div>
+    <!-- Cron -->
+    <div id="schedule-cron" class="form-group" style="display:none">
+      <label class="form-label" data-i18n="alert_form_cron_preset">Agendar</label>
+      <select class="form-input" id="alert-cron-preset" onchange="updateCronUI()">
+        <option value="daily">Todo dia</option>
+        <option value="weekly">Toda semana</option>
+        <option value="monthly">Todo mês</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <!-- Daily -->
+      <div id="cron-daily" class="form-row" style="margin-top:8px">
+        <div class="form-group" style="flex:1">
+          <label class="form-label" data-i18n="alert_form_cron_hour">Horário</label>
+          <input class="form-input" id="alert-cron-daily-hour" type="time" value="08:00">
+        </div>
+      </div>
+      <!-- Weekly -->
+      <div id="cron-weekly" class="form-row" style="margin-top:8px;display:none">
+        <div class="form-group" style="flex:1">
+          <label class="form-label" data-i18n="alert_form_cron_day">Dia da Semana</label>
+          <select class="form-input" id="alert-cron-weekly-day">
+            <option value="1">Segunda-feira</option>
+            <option value="2">Terça-feira</option>
+            <option value="3">Quarta-feira</option>
+            <option value="4">Quinta-feira</option>
+            <option value="5">Sexta-feira</option>
+            <option value="6">Sábado</option>
+            <option value="0">Domingo</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label" data-i18n="alert_form_cron_hour">Horário</label>
+          <input class="form-input" id="alert-cron-weekly-hour" type="time" value="08:00">
+        </div>
+      </div>
+      <!-- Monthly -->
+      <div id="cron-monthly" class="form-row" style="margin-top:8px;display:none">
+        <div class="form-group" style="flex:1">
+          <label class="form-label" data-i18n="alert_form_cron_day_month">Dia do Mês</label>
+          <input class="form-input" id="alert-cron-monthly-day" type="number" value="1" min="1" max="31">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label" data-i18n="alert_form_cron_hour">Horário</label>
+          <input class="form-input" id="alert-cron-monthly-hour" type="time" value="08:00">
+        </div>
+      </div>
+      <!-- Custom -->
+      <div id="cron-custom" style="margin-top:8px;display:none">
+        <div class="form-group">
+          <label class="form-label">Expressão Cron</label>
+          <input class="form-input" id="alert-cron-custom-expr" placeholder="0 8 * * *" style="font-family:monospace">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">
+            Formato: minuto hora dia_do_mês mês dia_da_semana
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_query">Query SQL</label>
+      <textarea class="form-input" id="alert-query" rows="3" placeholder="SELECT COUNT(*) as total FROM vendas" style="font-family:monospace;font-size:13px"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1">
+        <label class="form-label" data-i18n="alert_form_column">Coluna</label>
+        <input class="form-input" id="alert-column" placeholder="total (vazio = 1ª coluna)">
+      </div>
+      <div class="form-group" style="flex:0.5">
+        <label class="form-label" data-i18n="alert_form_condition">Condição</label>
+        <select class="form-input" id="alert-condition">
+          <option value="gt"> Maior que (>)</option>
+          <option value="lt"> Menor que (<)</option>
+          <option value="gte"> ≥ Maior ou igual</option>
+          <option value="lte"> ≤ Menor ou igual</option>
+          <option value="eq"> = Igual</option>
+          <option value="neq"> ≠ Diferente</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:0.5">
+        <label class="form-label" data-i18n="alert_form_threshold">Limiar</label>
+        <input class="form-input" id="alert-threshold" type="number" value="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="alert_form_channels">Canais de Notificação</label>
+      <div id="alert-channels-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="hideModal('alert-modal')" data-i18n="btn_cancel">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAlert()" data-i18n="btn_save">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Configurações</div>
+      <button class="modal-close" onclick="hideModal('settings-modal')">✕</button>
+    </div>
+    <div id="settings-content">
+      <div style="text-align:center;padding:20px"><span class="spinner"></span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideModal('settings-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+// ─── I18n ───
+const translations = {
+  pt: {
+    nav_dashboard: 'Dashboard', nav_connections: 'Conexões', nav_rules: 'Regras',
+    nav_query: 'Query', nav_channels: 'Canais', nav_alerts: 'Alertas', nav_activity: 'Atividade',
+    dash_title: 'Dashboard', dash_subtitle: 'Visão geral do sistema',
+    dash_recent: 'Atividade Recente',
+    stat_connections: 'Conexões', stat_rules: 'Regras', stat_channels: 'Canais', stat_llm: 'LLM',
+    conn_title: 'Conexões', conn_subtitle: 'Bancos de dados e APIs conectados',
+    conn_new: '+ Nova Conexão', conn_empty: 'Nenhuma conexão configurada',
+    conn_add: '+ Adicionar Conexão',
+    conn_name: 'Nome', conn_type: 'Tipo', conn_status: 'Status',
+    conn_delete: 'Excluir', conn_test: 'Testar',
+    conn_host: 'Host', conn_port: 'Porta', conn_database: 'Database',
+    conn_user: 'Usuário', conn_password_label: 'Senha',
+    rule_title: 'Regras', rule_subtitle: 'Regras de intenção regex e LLM',
+    rule_new: '+ Nova Regra', rule_empty: 'Nenhuma regra configurada',
+    rule_add: '+ Criar Regra',
+    rule_name: 'Nome', rule_pattern: 'Padrão', rule_conn: 'Conexão',
+    rule_mode: 'Modo', rule_active: 'Ativo',
+    rule_edit: 'Editar', rule_delete: 'Excluir', rule_toggle: 'Toggle',
+    query_title: 'Console SQL', query_subtitle: 'Execute SQL e explore schemas',
+    query_run: '▶ Executar', query_result: 'Resultado', query_schema: 'Schema',
+    query_placeholder: 'SELECT * FROM...', query_conn_select: 'Selecionar conexão...',
+    ch_title: 'Canais', ch_subtitle: 'Canais de comunicação ativos', ch_new: '+ Novo Canal',
+    alert_title: 'Alertas', alert_subtitle: 'Monitoramento automático de bancos', alert_new: '+ Nova Regra',
+    alert_stat_total: 'Total', alert_stat_active: 'Ativas', alert_stat_triggers: 'Triggers Hoje', alert_stat_executions: 'Execuções Hoje',
+    alert_modal_title: 'Nova Regra de Alerta',
+    alert_form_name: 'Nome', alert_form_desc: 'Descrição', alert_form_connection: 'Conexão',
+    alert_form_query: 'Query SQL', alert_form_column: 'Coluna', alert_form_condition: 'Condição',
+    alert_form_threshold: 'Limiar', alert_form_schedule_type: 'Tipo de Agendamento', alert_form_interval: 'A cada', alert_form_interval_unit: 'Unidade',
+    alert_form_cron_preset: 'Agendar', alert_form_cron_hour: 'Horário', alert_form_cron_day: 'Dia da Semana', alert_form_cron_day_month: 'Dia do Mês',
+    alert_form_channels: 'Canais de Notificação',
+    btn_cancel: 'Cancelar', btn_confirm: 'Confirmar', btn_save: 'Salvar',
+    ch_title: 'Canais', ch_subtitle: 'Canais de comunicação ativos',
+    ch_new: '+ Novo Canal', ch_empty: 'Nenhum canal configurado',
+    ch_add: '+ Adicionar Canal',
+    ch_name_label: 'Nome', ch_type_label: 'Tipo',
+    ch_token_label: 'Token / URL', ch_create: 'Criar',
+    act_title: 'Atividade', act_subtitle: 'Log de consultas e processamento',
+    act_empty: 'Nenhuma atividade registrada',
+    status_active: 'Ativo', status_configured: 'Configurado', status_inactive: 'Inativo',
+    btn_start: 'Iniciar', btn_stop: 'Parar', btn_delete: 'Excluir',
+    btn_test: 'Testar', btn_save: 'Salvar', btn_cancel: 'Cancelar',
+    btn_login: 'Entrar', btn_register: 'Registrar',
+    toast_conn_created: 'Conexão criada', toast_conn_deleted: 'Conexão excluída',
+    toast_rule_created: 'Regra criada', toast_rule_updated: 'Regra atualizada',
+    toast_rule_deleted: 'Regra excluída',
+    toast_ch_created: 'Canal criado', toast_ch_deleted: 'Canal excluído',
+    toast_tg_started: 'Telegram polling iniciado', toast_tg_stopped: 'Telegram polling parado',
+    toast_error: 'Erro',
+    auth_error_empty: 'Preencha usuario e senha',
+    auth_error_login: 'Falha no login', auth_error_server: 'Erro ao conectar ao servidor',
+    auth_error_register: 'Falha no registro', auth_error_fields: 'Preencha todos os campos',
+    auth_registered: 'Conta criada! Faca login.',
+    settings_system: 'Sistema', settings_version: 'Versão',
+    settings_online: 'Online', settings_offline: 'Offline',
+    settings_llm: 'LLM', settings_active: 'Ativo', settings_inactive: 'Inativo',
+    settings_telegram: 'Telegram', settings_running: '● Rodando', settings_stopped: '● Parado',
+    settings_polling_active: 'Ativo', settings_polling_inactive: 'Inativo',
+    settings_resources: 'Recursos',
+  },
+  en: {
+    nav_dashboard: 'Dashboard', nav_connections: 'Connections', nav_rules: 'Rules',
+    nav_query: 'Query', nav_channels: 'Channels', nav_alerts: 'Alerts', nav_activity: 'Activity',
+    dash_title: 'Dashboard', dash_subtitle: 'System overview',
+    dash_recent: 'Recent Activity',
+    stat_connections: 'Connections', stat_rules: 'Rules', stat_channels: 'Channels', stat_llm: 'LLM',
+    conn_title: 'Connections', conn_subtitle: 'Connected databases and APIs',
+    conn_new: '+ New Connection', conn_empty: 'No connections configured',
+    conn_add: '+ Add Connection',
+    conn_name: 'Name', conn_type: 'Type', conn_status: 'Status',
+    conn_delete: 'Delete', conn_test: 'Test',
+    conn_host: 'Host', conn_port: 'Port', conn_database: 'Database',
+    conn_user: 'Username', conn_password_label: 'Password',
+    rule_title: 'Rules', rule_subtitle: 'Regex and LLM intent rules',
+    rule_new: '+ New Rule', rule_empty: 'No rules configured',
+    rule_add: '+ Create Rule',
+    rule_name: 'Name', rule_pattern: 'Pattern', rule_conn: 'Connection',
+    rule_mode: 'Mode', rule_active: 'Active',
+    rule_edit: 'Edit', rule_delete: 'Delete', rule_toggle: 'Toggle',
+    query_title: 'SQL Console', query_subtitle: 'Run SQL and explore schemas',
+    query_run: '▶ Run', query_result: 'Result', query_schema: 'Schema',
+    query_placeholder: 'SELECT * FROM...', query_conn_select: 'Select connection...',
+    ch_title: 'Channels', ch_subtitle: 'Active communication channels', ch_new: '+ New Channel',
+    alert_title: 'Alerts', alert_subtitle: 'Automatic database monitoring', alert_new: '+ New Rule',
+    alert_stat_total: 'Total', alert_stat_active: 'Active', alert_stat_triggers: 'Triggers Today', alert_stat_executions: 'Executions Today',
+    alert_modal_title: 'New Alert Rule',
+    alert_form_name: 'Name', alert_form_desc: 'Description', alert_form_connection: 'Connection',
+    alert_form_query: 'SQL Query', alert_form_column: 'Column', alert_form_condition: 'Condition',
+    alert_form_threshold: 'Threshold', alert_form_schedule_type: 'Schedule Type', alert_form_interval: 'Every', alert_form_interval_unit: 'Unit',
+    alert_form_cron_preset: 'Schedule', alert_form_cron_hour: 'Time', alert_form_cron_day: 'Day of Week', alert_form_cron_day_month: 'Day of Month',
+    alert_form_channels: 'Notification Channels',
+    btn_cancel: 'Cancel', btn_confirm: 'Confirm', btn_save: 'Save',
+    query_run: '▶ Run', query_result: 'Result', query_schema: 'Schema',
+    query_placeholder: 'SELECT * FROM...', query_conn_select: 'Select connection...',
+    ch_title: 'Channels', ch_subtitle: 'Active communication channels',
+    ch_new: '+ New Channel', ch_empty: 'No channels configured',
+    ch_add: '+ Add Channel',
+    ch_name_label: 'Name', ch_type_label: 'Type',
+    ch_token_label: 'Token / URL', ch_create: 'Create',
+    act_title: 'Activity', act_subtitle: 'Query and processing log',
+    act_empty: 'No activity recorded',
+    status_active: 'Active', status_configured: 'Configured', status_inactive: 'Inactive',
+    btn_start: 'Start', btn_stop: 'Stop', btn_delete: 'Delete',
+    btn_test: 'Test', btn_save: 'Save', btn_cancel: 'Cancel',
+    btn_login: 'Login', btn_register: 'Register',
+    toast_conn_created: 'Connection created', toast_conn_deleted: 'Connection deleted',
+    toast_rule_created: 'Rule created', toast_rule_updated: 'Rule updated',
+    toast_rule_deleted: 'Rule deleted',
+    toast_ch_created: 'Channel created', toast_ch_deleted: 'Channel deleted',
+    toast_tg_started: 'Telegram polling started', toast_tg_stopped: 'Telegram polling stopped',
+    toast_error: 'Error',
+    auth_error_empty: 'Please fill in username and password',
+    auth_error_login: 'Login failed', auth_error_server: 'Failed to connect to server',
+    auth_error_register: 'Registration failed', auth_error_fields: 'Please fill in all fields',
+    auth_registered: 'Account created! Please login.',
+    settings_system: 'System', settings_version: 'Version',
+    settings_online: 'Online', settings_offline: 'Offline',
+    settings_llm: 'LLM', settings_active: 'Active', settings_inactive: 'Inactive',
+    settings_telegram: 'Telegram', settings_running: '● Running', settings_stopped: '● Stopped',
+    settings_polling_active: 'Active', settings_polling_inactive: 'Inactive',
+    settings_resources: 'Resources',
+  }
+};
+
+let currentLang = localStorage.getItem('datahub_lang') || 'pt';
+
+function t(key) {
+  return (translations[currentLang] && translations[currentLang][key]) || key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('datahub_lang', lang);
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+  const btn = document.getElementById('lang-toggle');
+  if (btn) btn.textContent = lang === 'pt' ? 'EN' : 'PT';
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[currentLang] && translations[currentLang][key]) {
+      el.textContent = translations[currentLang][key];
+    }
+  });
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (translations[currentLang] && translations[currentLang][key]) {
+      el.placeholder = translations[currentLang][key];
+    }
+  });
+  // Re-render current page
+  const activePage = document.querySelector('.nav-item.active');
+  if (activePage) navigate(activePage.dataset.page);
+}
+
+function toggleLang() { setLang(currentLang === 'pt' ? 'en' : 'pt'); }
+
+// ─── Router ───
+const pages = document.querySelectorAll('.nav-item[data-page]');
+const allPages = document.querySelectorAll('.page');
+function navigate(page) {
+  allPages.forEach(p => p.classList.remove('active'));
+  pages.forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'connections') loadConnections();
+  else if (page === 'rules') loadRules();
+  else if (page === 'query') loadQueryConnections();
+  else if (page === 'channels') loadChannels();
+  else if (page === 'schemas') { loadSchemasConfig(); loadBusinessContext(); }
+  else if (page === 'config') loadProviders();
+  else if (page === 'alerts') loadAlerts();
+  else if (page === 'activity') loadActivity();
+}
+pages.forEach(n => n.addEventListener('click', () => navigate(n.dataset.page)));
+window.addEventListener('hashchange', () => navigate(location.hash.slice(1) || 'dashboard'));
+
+// ─── API helpers ───
+function getAuthToken() {
+  return localStorage.getItem('datahub_token');
+}
+
+async function api(path, opts = {}) {
+  const token = getAuthToken();
+  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const { headers: _, ...fetchOpts } = opts;
+  try {
+    const r = await fetch(API + path, { headers, ...fetchOpts });
+    if (r.status === 401) {
+      // Token expired or invalid — show login
+      showLogin();
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+    return data;
+  } catch (e) {
+    if (!e.message.includes('Sessão expirada')) toast(e.message, 'error');
+    throw e;
+  }
+}
+
+// ─── Toast ───
+function toast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 200); }, 3000);
+}
+
+// ─── Confirm Modal ───
+let _confirmResolve = null;
+
+function showConfirm(title, message) {
+  return new Promise((resolve) => {
+    _confirmResolve = resolve;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    document.getElementById('confirm-modal').classList.add('show');
+  });
+}
+
+function confirmOk() {
+  document.getElementById('confirm-modal').classList.remove('show');
+  if (_confirmResolve) _confirmResolve(true);
+  _confirmResolve = null;
+}
+
+function confirmCancel() {
+  document.getElementById('confirm-modal').classList.remove('show');
+  if (_confirmResolve) _confirmResolve(false);
+  _confirmResolve = null;
+}
+
+// ─── Modal ───
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+// ─── Dashboard ───
+async function loadDashboard() {
+  const h = await api('/health');
+  document.getElementById('version').textContent = 'v' + h.version;
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Conexões</div>
+      <div class="stat-value">${h.adapters.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Regras</div>
+      <div class="stat-value">${h.rules.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Canais</div>
+      <div class="stat-value">${h.channels.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">LLM</div>
+      <div class="stat-value" style="font-size:16px">${h.llm_model || '—'}</div>
+      <div class="stat-badge ${h.llm_enabled ? 'on' : 'off'}">
+        <span class="dot ${h.llm_enabled ? 'dot-green' : 'dot-red'}"></span>
+        ${h.llm_enabled ? 'Ativo' : 'Inativo'}
+      </div>
+    </div>
+  `;
+  // Activity
+  const act = document.getElementById('dash-activity');
+  if (activityLog.length === 0) {
+    act.innerHTML = '<div class="empty" style="padding:24px"><div class="empty-text">Nenhuma atividade registrada</div></div>';
+  } else {
+    act.innerHTML = activityLog.slice(-5).reverse().map(a => `
+      <div class="activity-item">
+        <div class="activity-time">${a.time}</div>
+        <div class="activity-msg">${escHtml(a.msg)}</div>
+        <div class="activity-method"><span class="badge badge-${a.method === 'regex' ? 'accent' : 'success'}">${a.method}</span></div>
+      </div>
+    `).join('');
+  }
+}
+
+// ─── Connections ───
+// Status de teste por conexão: { id: 'ok'|'fail'|null, msg: '...' }
+const connStatus = {};
+const connStatusMsg = {};
+
+const connConfigs = {
+  postgres: [
+    { key: 'host', label: 'Host', placeholder: 'localhost' },
+    { key: 'port', label: 'Porta', placeholder: '5432' },
+    { key: 'database', label: 'Database', placeholder: 'mydb' },
+    { key: 'user', label: 'Usuário', placeholder: 'postgres' },
+    { key: 'password', label: 'Senha', placeholder: '••••', type: 'password' }
+  ],
+  mysql: [
+    { key: 'host', label: 'Host', placeholder: 'localhost' },
+    { key: 'port', label: 'Porta', placeholder: '3306' },
+    { key: 'database', label: 'Database', placeholder: 'mydb' },
+    { key: 'user', label: 'Usuário', placeholder: 'root' },
+    { key: 'password', label: 'Senha', placeholder: '••••', type: 'password' }
+  ],
+  sqlite: [
+    { key: 'path', label: 'Caminho', placeholder: '/path/to/db.sqlite' }
+  ],
+  mongodb: [
+    { key: 'uri', label: 'URI', placeholder: 'mongodb://localhost:27017/mydb' }
+  ],
+  api_rest: [
+    { key: 'base_url', label: 'Base URL', placeholder: 'https://api.example.com' }
+  ]
+};
+
+function renderConnConfig() {
+  const type = document.getElementById('conn-type').value;
+  const fields = connConfigs[type] || [];
+  document.getElementById('conn-config-fields').innerHTML = fields.map(f => `
+    <div class="form-group">
+      <label class="form-label">${f.label}</label>
+      <input class="form-input" id="cfg-${f.key}" placeholder="${f.placeholder}" type="${f.type || 'text'}">
+    </div>
+  `).join('');
+}
+document.getElementById('conn-type').addEventListener('change', renderConnConfig);
+renderConnConfig();
+
+async function loadConnections() {
+  const conns = await api('/connections/');
+  const tbody = document.getElementById('connections-table');
+  const empty = document.getElementById('connections-empty');
+  if (conns.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = conns.map(c => `
+    <tr>
+      <td><strong>${escHtml(c.name)}</strong></td>
+      <td><span class="badge badge-muted">${c.db_type}</span></td>
+      <td><span class="dot ${connStatus[c.id] === 'ok' ? 'dot-green' : connStatus[c.id] === 'fail' ? 'dot-red' : 'dot-yellow'}" title="${connStatusMsg[c.id] || 'Não testado'}"></span></td>
+      <td style="text-align:right">
+        <button class="btn btn-sm" onclick="openEditConnection(${c.id})">Editar</button>
+        <button class="btn btn-sm" onclick="testConnection(${c.id})">Testar</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteConnection(${c.id})">Excluir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function createConnection() {
+  const name = document.getElementById('conn-name').value.trim();
+  const db_type = document.getElementById('conn-type').value;
+  if (!name) { toast('Nome é obrigatório', 'error'); return; }
+  const fields = connConfigs[db_type] || [];
+  const config = {};
+  fields.forEach(f => { config[f.key] = document.getElementById('cfg-' + f.key)?.value || ''; });
+  await api('/connections/', { method: 'POST', body: JSON.stringify({ name, db_type, config }) });
+  hideModal('connection-modal');
+  document.getElementById('conn-name').value = '';
+  toast('Conexão criada');
+  loadConnections();
+}
+
+async function testConnection(id) {
+  connStatus[id] = null;
+  connStatusMsg[id] = 'Testando...';
+  loadConnections();
+  const r = await api(`/connections/${id}/test`, { method: 'POST' });
+  if (r.connected) {
+    connStatus[id] = 'ok';
+    connStatusMsg[id] = `Conectado: ${r.name}`;
+    toast(`Conectado: ${r.name}`, 'success');
+  } else {
+    connStatus[id] = 'fail';
+    connStatusMsg[id] = r.error || 'Erro desconhecido';
+    toast(`Falha: ${r.error || 'Erro ao conectar'}`, 'error');
+  }
+  loadConnections();
+}
+
+async function deleteConnection(id) {
+  const confirmed = await showConfirm('Excluir Conexão', 'Tem certeza que deseja excluir esta conexão?');
+  if (!confirmed) return;
+  await api(`/connections/${id}`, { method: 'DELETE' });
+  toast('Conexão excluída');
+  loadConnections();
+}
+
+// ─── Edit Connection ───
+let editingConnId = null;
+
+async function openEditConnection(id) {
+  editingConnId = id;
+  const c = await api(`/connections/${id}`);
+
+  document.getElementById('edit-conn-name').value = c.name;
+  document.getElementById('edit-conn-type').value = c.db_type;
+
+  // Renderiza campos de config
+  const fields = connConfigs[c.db_type] || [];
+  const container = document.getElementById('edit-conn-config-fields');
+  container.innerHTML = fields.map(f => {
+    const val = c.config?.[f.key] || '';
+    const isPassword = f.type === 'password';
+    return `
+      <div class="form-group">
+        <label class="form-label">${f.label}</label>
+        <input class="form-input" id="edit-cfg-${f.key}" placeholder="${f.placeholder}"
+               type="${isPassword ? 'password' : 'text'}" value="${escHtml(val)}">
+      </div>
+    `;
+  }).join('');
+
+  // Listener pra mudar tipo
+  const typeSelect = document.getElementById('edit-conn-type');
+  typeSelect.onchange = () => {
+    const newType = typeSelect.value;
+    const newFields = connConfigs[newType] || [];
+    container.innerHTML = newFields.map(f => `
+      <div class="form-group">
+        <label class="form-label">${f.label}</label>
+        <input class="form-input" id="edit-cfg-${f.key}" placeholder="${f.placeholder}"
+               type="${f.type || 'text'}">
+      </div>
+    `).join('');
+  };
+
+  showModal('edit-connection-modal');
+}
+
+async function saveEditConnection() {
+  if (!editingConnId) return;
+  const name = document.getElementById('edit-conn-name').value.trim();
+  const db_type = document.getElementById('edit-conn-type').value;
+  if (!name) { toast('Nome é obrigatório', 'error'); return; }
+
+  const fields = connConfigs[db_type] || [];
+  const config = {};
+  fields.forEach(f => {
+    const el = document.getElementById('edit-cfg-' + f.key);
+    if (el) config[f.key] = el.value;
+  });
+
+  try {
+    await api(`/connections/${editingConnId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, db_type, config }),
+    });
+    hideModal('edit-connection-modal');
+    toast('Conexão atualizada');
+    loadConnections();
+  } catch (e) {
+    toast('Erro ao atualizar: ' + (e.message || e), 'error');
+  }
+  editingConnId = null;
+}
+
+// ─── Rules ───
+async function loadRules() {
+  const [rules, conns] = await Promise.all([api('/rules/'), api('/connections/')]);
+  const tbody = document.getElementById('rules-table');
+  const empty = document.getElementById('rules-empty');
+  const sel = document.getElementById('rule-conn');
+  sel.innerHTML = conns.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+  if (rules.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = rules.map(r => `
+    <tr>
+      <td><strong>${escHtml(r.name)}</strong></td>
+      <td><code style="color:var(--accent-hover);font-size:12px">${escHtml(r.pattern)}</code></td>
+      <td><span class="badge badge-muted">${escHtml(r.connection)}</span></td>
+      <td><span class="badge badge-accent">regex</span></td>
+      <td>
+        <div class="toggle ${r.active !== false ? 'on' : ''}" onclick="toggleRule(${r.id})"></div>
+      </td>
+      <td style="text-align:right">
+        <button class="btn btn-sm" onclick="editRule(${r.id}, '${escHtml(r.name)}', '${escHtml(r.pattern)}', '${escHtml(r.connection)}', '${escHtml(r.query_template || '')}')">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteRule(${r.id})">Excluir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+let editingRuleId = null;
+
+function editRule(id, name, pattern, connection, query_template) {
+  editingRuleId = id;
+  document.getElementById('rule-modal-title').textContent = 'Editar Regra';
+  document.getElementById('rule-modal-btn').textContent = 'Salvar';
+  document.getElementById('rule-name').value = name;
+  document.getElementById('rule-pattern').value = pattern;
+  document.getElementById('rule-conn').value = connection;
+  document.getElementById('rule-query').value = query_template;
+  showModal('rule-modal');
+}
+
+function openNewRuleModal() {
+  editingRuleId = null;
+  document.getElementById('rule-modal-title').textContent = 'Nova Regra';
+  document.getElementById('rule-modal-btn').textContent = 'Criar';
+  document.getElementById('rule-name').value = '';
+  document.getElementById('rule-pattern').value = '';
+  document.getElementById('rule-query').value = '';
+  showModal('rule-modal');
+}
+
+async function saveRule() {
+  const name = document.getElementById('rule-name').value.trim();
+  const pattern = document.getElementById('rule-pattern').value.trim();
+  const connection = document.getElementById('rule-conn').value;
+  const query_template = document.getElementById('rule-query').value.trim();
+  if (!name || !pattern || !query_template) { toast('Preencha todos os campos', 'error'); return; }
+  const body = JSON.stringify({ name, pattern, connection, query_template });
+  if (editingRuleId) {
+    await api(`/rules/${editingRuleId}`, { method: 'PUT', body });
+    toast('Regra atualizada');
+  } else {
+    await api('/rules/', { method: 'POST', body });
+    toast('Regra criada');
+  }
+  editingRuleId = null;
+  hideModal('rule-modal');
+  loadRules();
+}
+
+async function toggleRule(id) {
+  await api(`/rules/${id}/toggle`, { method: 'POST' });
+  loadRules();
+}
+
+async function deleteRule(id) {
+  const confirmed = await showConfirm('Excluir Regra', 'Tem certeza que deseja excluir esta regra?');
+  if (!confirmed) return;
+  await api(`/rules/${id}`, { method: 'DELETE' });
+  toast('Regra excluída');
+  loadRules();
+}
+
+// ─── Query ───
+async function loadQueryConnections() {
+  const conns = await api('/connections/');
+  const sel = document.getElementById('query-conn');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Selecionar conexão...</option>' +
+    conns.map(c => `<option value="${c.name}" ${c.name === prev ? 'selected' : ''}>${c.name}</option>`).join('');
+}
+
+async function loadSchema() {
+  const conn = document.getElementById('query-conn').value;
+  const tree = document.getElementById('schema-tree');
+  if (!conn) { tree.innerHTML = '<div style="color:var(--text-subtle);font-size:12px">Selecione uma conexão</div>'; return; }
+  try {
+    const data = await api(`/query/schema/${conn}`);
+    const schemas = data.schemas || {};
+    const allTables = Object.values(schemas).flatMap(t => Object.keys(t));
+    if (allTables.length === 0) {
+      tree.innerHTML = '<div style="color:var(--text-subtle);font-size:12px">Nenhuma tabela</div>';
+      return;
+    }
+    // Renderiza agrupado por schema
+    let html = '';
+    let tableIdx = 0;
+    for (const [schemaName, tables] of Object.entries(schemas)) {
+      const tableCount = Object.keys(tables).length;
+      html += `<div style="padding:6px 10px;font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:8px;border-bottom:1px solid var(--border-subtle)">
+        ◆ ${schemaName} <span style="color:var(--text-subtle);font-weight:400">(${tableCount})</span>
+      </div>`;
+      for (const [tableName, columns] of Object.entries(tables)) {
+        const tid = `schema-t-${tableIdx++}`;
+        const colCount = (columns || []).length;
+        html += `<div class="schema-table-item" onclick="insertTable('${schemaName}.${tableName}')">
+          <span class="schema-toggle" id="${tid}-chevron" onclick="event.stopPropagation();toggleSchemaCols('${tid}')">▸</span>
+          <span style="color:var(--accent-hover)">⊞</span> ${tableName}
+          <span style="color:var(--text-subtle);font-size:10px;margin-left:auto">${colCount} cols</span>
+        </div>`;
+        html += `<div class="schema-cols" id="${tid}">`;
+        for (const c of (columns || [])) {
+          html += `<div class="schema-col">${c.column_name || c.name} <span class="type">${c.data_type || c.type || ''}</span></div>`;
+        }
+        html += `</div>`;
+      }
+    }
+    tree.innerHTML = html;
+  } catch {
+    tree.innerHTML = '<div style="color:var(--danger);font-size:12px">Erro ao carregar schema</div>';
+  }
+}
+
+function insertTable(name) {
+  const ta = document.getElementById('query-sql');
+  const val = ta.value;
+  if (!val.trim()) {
+    ta.value = `SELECT * FROM ${name} LIMIT 100`;
+  } else {
+    ta.value = val + ` ${name}`;
+  }
+  ta.focus();
+}
+
+function toggleSchemaCols(tid) {
+  const cols = document.getElementById(tid);
+  const chevron = document.getElementById(tid + '-chevron');
+  if (!cols) return;
+  cols.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+
+async function runQuery() {
+  const conn = document.getElementById('query-conn').value;
+  const sql = document.getElementById('query-sql').value.trim();
+  if (!conn || !sql) { toast('Selecione conexão e escreva uma query', 'error'); return; }
+
+  const btn = document.getElementById('query-run-btn');
+  btn.innerHTML = '<span class="spinner"></span> Executando...';
+  btn.disabled = true;
+
+  const t0 = performance.now();
+  try {
+    const r = await api('/query/', { method: 'POST', body: JSON.stringify({ connection: conn, query: sql }) });
+    const ms = Math.round(performance.now() - t0);
+    document.getElementById('query-time').textContent = ms + 'ms';
+    document.getElementById('query-result-info').textContent = `${r.row_count} linha${r.row_count !== 1 ? 's' : ''}`;
+
+    addActivity(sql, 'direct', ms);
+    renderResultTable(r);
+  } catch (e) {
+    document.getElementById('query-result').innerHTML = `<div style="color:var(--danger);font-size:13px">${escHtml(e.message)}</div>`;
+  } finally {
+    btn.innerHTML = '▶ Executar';
+    btn.disabled = false;
+  }
+}
+
+function renderResultTable(r) {
+  const el = document.getElementById('query-result');
+  if (!r.rows || r.rows.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-text">Consulta sem resultados</div></div>';
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table class="result-table">
+    <thead><tr>${r.columns.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+    <tbody>${r.rows.map(row => `<tr>${r.columns.map(c => { const v = row[c]; return `<td>${v === null ? '<span style="color:var(--text-subtle)">NULL</span>' : escHtml(String(v))}</td>`; }).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// Ctrl+Enter to run query
+document.getElementById('query-sql').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runQuery(); }
+});
+
+// ─── Channels ───
+async function loadChannels() {
+  const chs = await api('/channels/');
+  const list = document.getElementById('channels-list');
+  const empty = document.getElementById('channels-empty');
+
+  let tgStatus = { polling: false };
+  try { tgStatus = await api('/telegram/status'); } catch {}
+
+  if (chs.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = chs.map(c => {
+    const iconBg = {
+      'telegram-bot': 'rgba(0,136,204,.12)',
+      'whatsapp': 'rgba(37,211,102,.12)',
+      'slack': 'rgba(74,21,75,.12)',
+      'google_chat': 'rgba(0,150,136,.12)',
+      'teams': 'rgba(0,120,212,.12)',
+    }[c.channel_type] || 'rgba(45,164,78,.12)';
+    
+    const icon = {
+      'telegram-bot': '✈',
+      'whatsapp': '💬',
+      'slack': '💬',
+      'google_chat': '💬',
+      'teams': '💬',
+    }[c.channel_type] || '💬';
+    
+    // Determine polling status per channel type
+    const isTelegram = c.channel_type === 'telegram-bot';
+    const isPolling = isTelegram ? tgStatus.polling : false;
+    
+    // Status text and dot color
+    const statusText = isPolling ? t('status_active') : t('status_configured');
+    const dotClass = isPolling ? 'dot-green' : 'dot-muted';
+    
+    // Buttons: show appropriate action based on state
+    let actions = '';
+    if (isTelegram) {
+      if (isPolling) {
+        actions = `<button class="btn btn-sm btn-danger" onclick="stopTelegram()">⏹ ${t('btn_stop')}</button>`;
+      } else {
+        actions = `<button class="btn btn-sm" onclick="startTelegram()">▶ ${t('btn_start')}</button>`;
+      }
+    }
+    actions += `<button class="btn btn-sm btn-danger" onclick="deleteChannel(${c.id})">✕ ${t('btn_delete')}</button>`;
+    
+    return `
+    <div class="channel-card">
+      <div class="channel-icon" style="background:${iconBg}">
+        ${icon}
+      </div>
+      <div class="channel-info">
+        <div class="channel-name">${escHtml(c.name)}</div>
+        <div class="channel-status">
+          <span class="dot ${dotClass}"></span> ${statusText}
+        </div>
+      </div>
+      <div class="channel-actions">
+        ${actions}
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function updateChannelFields() {
+  const type = document.getElementById('ch-type').value;
+  const extra = document.getElementById('ch-extra-fields');
+  const tokenInput = document.getElementById('ch-token');
+  
+  // Reset token label
+  tokenInput.placeholder = "Token do bot ou URL do webhook";
+  
+  let html = '';
+  
+  switch(type) {
+    case 'telegram-bot':
+      tokenInput.placeholder = "Token do bot Telegram";
+      break;
+    case 'whatsapp':
+      tokenInput.placeholder = "URL da Evolution API (ex: http://evolution:8080)";
+      html = `
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" id="ch-api-key" placeholder="Chave da API Evolution">
+        </div>
+      `;
+      break;
+    case 'slack':
+      tokenInput.style.display = 'none';
+      html = `
+        <div class="form-group">
+          <label class="form-label">Bot Token</label>
+          <input class="form-input" id="ch-slack-bot-token" placeholder="xoxb-...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">App Token</label>
+          <input class="form-input" id="ch-slack-app-token" placeholder="xapp-...">
+        </div>
+      `;
+      break;
+    case 'google_chat':
+      tokenInput.style.display = 'none';
+      html = `
+        <div class="form-group">
+          <label class="form-label">Service Account JSON (caminho ou JSON)</label>
+          <textarea class="form-input" id="ch-google-sa" rows="3" placeholder="Caminho para o arquivo JSON ou JSON inline"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Project ID</label>
+          <input class="form-input" id="ch-google-project" placeholder="ID do projeto GCP">
+        </div>
+      `;
+      break;
+    case 'teams':
+      tokenInput.style.display = 'none';
+      html = `
+        <div class="form-group">
+          <label class="form-label">Tenant ID</label>
+          <input class="form-input" id="ch-teams-tenant" placeholder="ID do tenant Azure AD">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client ID</label>
+          <input class="form-input" id="ch-teams-client" placeholder="ID do aplicativo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Secret</label>
+          <input class="form-input" id="ch-teams-secret" type="password" placeholder="Segredo do aplicativo">
+        </div>
+      `;
+      break;
+    default:
+      tokenInput.style.display = '';
+  }
+  
+  // Reset display for telegram and whatsapp
+  if (type === 'telegram-bot' || type === 'whatsapp') {
+    tokenInput.style.display = '';
+  }
+  
+  extra.innerHTML = html;
+}
+
+async function createChannel() {
+  const name = document.getElementById('ch-name').value.trim();
+  const channel_type = document.getElementById('ch-type').value;
+  const token = document.getElementById('ch-token').value.trim();
+  if (!name) { toast('Nome é obrigatório', 'error'); return; }
+  
+  const config = {};
+  
+  // Configure based on channel type
+  switch(channel_type) {
+    case 'telegram-bot':
+      config.token = token;
+      break;
+    case 'whatsapp':
+      config.api_url = token || 'http://evolution:8080';
+      config.api_key = document.getElementById('ch-api-key')?.value || '';
+      config.instance = 'hub';
+      break;
+    case 'slack':
+      config.bot_token = document.getElementById('ch-slack-bot-token')?.value || '';
+      config.app_token = document.getElementById('ch-slack-app-token')?.value || '';
+      break;
+    case 'google_chat':
+      config.service_account_json = document.getElementById('ch-google-sa')?.value || '';
+      config.project_id = document.getElementById('ch-google-project')?.value || '';
+      break;
+    case 'teams':
+      config.tenant_id = document.getElementById('ch-teams-tenant')?.value || '';
+      config.client_id = document.getElementById('ch-teams-client')?.value || '';
+      config.client_secret = document.getElementById('ch-teams-secret')?.value || '';
+      break;
+    default:
+      config.url = token;
+  }
+  
+  await api('/channels/', { method: 'POST', body: JSON.stringify({ name, channel_type, config }) });
+  hideModal('channel-modal');
+  document.getElementById('ch-name').value = '';
+  document.getElementById('ch-token').value = '';
+  toast('Canal criado');
+  loadChannels();
+}
+
+async function startTelegram() {
+  await api('/telegram/start', { method: 'POST' });
+  toast('Telegram polling iniciado');
+  loadChannels();
+}
+
+async function stopTelegram() {
+  await api('/telegram/stop', { method: 'POST' });
+  toast('Telegram polling parado');
+  loadChannels();
+}
+
+async function deleteChannel(id) {
+  const confirmed = await showConfirm('Excluir Canal', 'Tem certeza que deseja excluir este canal?');
+  if (!confirmed) return;
+  await api(`/channels/${id}`, { method: 'DELETE' });
+  toast('Canal excluído');
+  loadChannels();
+}
+
+// ─── Schemas ───
+async function loadSchemasConfig() {
+  const schemas = await api('/schemas/');
+  const tbody = document.getElementById('schemas-table');
+  const empty = document.getElementById('schemas-empty');
+
+  if (schemas.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Separar schemas (table_name null) de tabelas (table_name set)
+  const schemaEntries = schemas.filter(s => !s.table_name);
+  const tableEntries = schemas.filter(s => s.table_name);
+
+  // Agrupar tabelas por connection_name.schema_name
+  const tablesBySchema = {};
+  tableEntries.forEach(t => {
+    const key = `${t.connection_name}.${t.schema_name}`;
+    if (!tablesBySchema[key]) tablesBySchema[key] = [];
+    tablesBySchema[key].push(t);
+  });
+
+  let html = '';
+  schemaEntries.forEach(s => {
+    const dotClass = s.is_active ? 'dot-green' : 'dot-red';
+    const rowStyle = s.is_active ? '' : 'opacity:.55';
+    const statusLabel = s.is_active ? 'Ativo' : 'Inativo';
+    const statusBtnLabel = s.is_active ? 'Desativar' : 'Ativar';
+    const statusBtnClass = s.is_active ? 'btn-danger' : '';
+    const tableKey = `${s.connection_name}.${s.schema_name}`;
+    const tables = tablesBySchema[tableKey] || [];
+    const tid = `sch-${s.id}`;
+
+    // Linha do schema
+    html += `
+    <tr style="${rowStyle}">
+      <td>${escHtml(s.connection_name)}</td>
+      <td>
+        <strong>${escHtml(s.schema_name)}</strong>
+        ${tables.length > 0 ? `<span style="cursor:pointer;font-size:11px;color:var(--text-muted);margin-left:6px" onclick="toggleSchemaExpand('${tid}')">▸ ${tables.length} tabelas</span>` : ''}
+      </td>
+      <td>
+        <input class="form-input" style="font-size:11px;padding:4px 8px;min-width:200px"
+          placeholder="Descrição do schema"
+          value="${escHtml(s.description || '')}"
+          onchange="updateSchemaDesc(${s.id}, this.value)">
+      </td>
+      <td><span class="dot ${dotClass}" style="margin-right:6px"></span>${statusLabel}</td>
+      <td><button class="btn btn-sm ${statusBtnClass}" onclick="toggleSchema(${s.id}, ${!s.is_active})">${statusBtnLabel}</button></td>
+    </tr>`;
+
+    // Linhas das tabelas (colapsadas por padrão)
+    tables.forEach(t => {
+      const tDotClass = t.is_active ? 'dot-green' : 'dot-red';
+      const tRowStyle = t.is_active ? '' : 'opacity:.55';
+      const tStatusLabel = t.is_active ? 'Ativo' : 'Inativo';
+      const tBtnLabel = t.is_active ? 'Desativar' : 'Ativar';
+      const tBtnClass = t.is_active ? 'btn-danger' : '';
+      html += `
+      <tr class="schema-table-row" id="${tid}" style="display:none;background:var(--bg-secondary)">
+        <td style="padding-left:24px;color:var(--text-muted);font-size:11px">└</td>
+        <td style="font-size:12px">${escHtml(t.table_name)}</td>
+        <td>
+          <input class="form-input" style="font-size:11px;padding:4px 8px;min-width:200px"
+            placeholder="O que essa tabela armazena?"
+            value="${escHtml(t.description || '')}"
+            onchange="updateSchemaDesc(${t.id}, this.value)">
+        </td>
+        <td><span class="dot ${tDotClass}" style="margin-right:6px"></span>${tStatusLabel}</td>
+        <td><button class="btn btn-sm ${tBtnClass}" onclick="toggleSchema(${t.id}, ${!t.is_active})">${tBtnLabel}</button></td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
+}
+
+function toggleSchemaExpand(tid) {
+  const rows = document.querySelectorAll(`#${tid}`);
+  const anyVisible = Array.from(rows).some(r => r.style.display !== 'none');
+  rows.forEach(r => r.style.display = anyVisible ? 'none' : '');
+}
+
+async function toggleSchema(id, isActive) {
+  await api(`/schemas/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_active: isActive })
+  });
+  loadSchemasConfig();
+}
+
+async function updateSchemaDesc(id, description) {
+  await api(`/schemas/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ description })
+  });
+  toast('Descrição salva');
+}
+
+// ─── Business Context ───
+async function loadBusinessContext() {
+  try {
+    const data = await api('/settings/business_context');
+    const ta = document.getElementById('business-context');
+    if (ta && data.value) ta.value = data.value;
+  } catch(e) { /* ignore */ }
+}
+
+async function saveBusinessContext() {
+  const ta = document.getElementById('business-context');
+  if (!ta) return;
+  await api('/settings/business_context', {
+    method: 'PUT',
+    body: JSON.stringify({ value: ta.value })
+  });
+  toast('Contexto de negócio salvo!');
+}
+
+// ─── LLM Providers ───
+async function loadProviders() {
+  const providers = await api('/llm-providers/');
+  const list = document.getElementById('providers-list');
+  if (!providers.length) {
+    list.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">Nenhum provedor configurado. Clique em "+ Adicionar" pra começar.</div>';
+    return;
+  }
+  list.innerHTML = providers.map(p => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:${p.is_default ? 'rgba(79,209,197,0.08)' : 'var(--bg-card)'}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="dot ${p.is_active ? (p.is_default ? 'dot-green' : 'dot-yellow') : 'dot-red'}" title="${p.is_active ? (p.is_default ? 'Padrão' : 'Ativo') : 'Inativo'}"></div>
+        <div>
+          <div style="font-weight:600">${escHtml(p.name)} ${p.is_default ? '<span style="color:var(--accent);font-size:11px">★ PADRÃO</span>' : ''}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${escHtml(p.provider)} / ${escHtml(p.model)} ${p.api_key ? '•••' + p.api_key.slice(-4) : ''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${!p.is_default ? `<button class="btn btn-sm" onclick="setDefaultProvider(${p.id})" title="Definir como padrão">★</button>` : ''}
+        <button class="btn btn-sm" onclick="toggleProviderActive(${p.id}, ${!p.is_active})" title="${p.is_active ? 'Desativar' : 'Ativar'}">${p.is_active ? '●' : '○'}</button>
+        <button class="btn btn-sm" onclick="editProvider(${p.id})" title="Editar">✎</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProvider(${p.id})" title="Remover">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddProvider() {
+  document.getElementById('provider-modal-title').textContent = 'Adicionar Provedor';
+  document.getElementById('provider-id').value = '';
+  document.getElementById('provider-name').value = '';
+  document.getElementById('provider-type').value = 'openai';
+  document.getElementById('provider-model').value = '';
+  document.getElementById('provider-apikey').value = '';
+  document.getElementById('provider-apibase').value = '';
+  document.getElementById('provider-maxtokens').value = '4000';
+  document.getElementById('provider-temperature').value = '0';
+  document.getElementById('provider-default').value = 'false';
+  document.getElementById('provider-modal').style.display = 'flex';
+}
+
+async function editProvider(id) {
+  const providers = await api('/llm-providers/');
+  const p = providers.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('provider-modal-title').textContent = 'Editar Provedor';
+  document.getElementById('provider-id').value = p.id;
+  document.getElementById('provider-name').value = p.name;
+  document.getElementById('provider-type').value = p.provider;
+  document.getElementById('provider-model').value = p.model;
+  document.getElementById('provider-apikey').value = '';
+  document.getElementById('provider-apibase').value = p.api_base || '';
+  document.getElementById('provider-maxtokens').value = p.max_tokens;
+  document.getElementById('provider-temperature').value = p.temperature;
+  document.getElementById('provider-default').value = p.is_default ? 'true' : 'false';
+  document.getElementById('provider-modal').style.display = 'flex';
+}
+
+function hideProviderModal() {
+  document.getElementById('provider-modal').style.display = 'none';
+}
+
+async function saveProvider() {
+  const id = document.getElementById('provider-id').value;
+  const data = {
+    name: document.getElementById('provider-name').value,
+    provider: document.getElementById('provider-type').value,
+    model: document.getElementById('provider-model').value,
+    api_key: document.getElementById('provider-apikey').value,
+    api_base: document.getElementById('provider-apibase').value,
+    max_tokens: parseInt(document.getElementById('provider-maxtokens').value) || 4000,
+    temperature: parseFloat(document.getElementById('provider-temperature').value) || 0,
+    is_default: document.getElementById('provider-default').value === 'true',
+    is_active: true
+  };
+  if (!data.name || !data.model) { toast('Nome e modelo são obrigatórios'); return; }
+
+  if (id) {
+    // Se tá mudando API key vazia, não envia
+    if (!data.api_key) delete data.api_key;
+    await api(`/llm-providers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  } else {
+    if (!data.api_key) { toast('API Key é obrigatória'); return; }
+    await api('/llm-providers/', { method: 'POST', body: JSON.stringify(data) });
+  }
+  hideProviderModal();
+  loadProviders();
+  toast(id ? 'Provedor atualizado!' : 'Provedor criado!');
+}
+
+async function deleteProvider(id) {
+  if (!confirm('Remover este provedor?')) return;
+  await api(`/llm-providers/${id}`, { method: 'DELETE' });
+  loadProviders();
+  toast('Provedor removido');
+}
+
+async function toggleProviderActive(id, active) {
+  await api(`/llm-providers/${id}`, { method: 'PUT', body: JSON.stringify({ is_active: active }) });
+  loadProviders();
+}
+
+async function setDefaultProvider(id) {
+  await api(`/llm-providers/${id}/set-default`, { method: 'POST' });
+  loadProviders();
+  toast('Provedor padrão atualizado');
+}
+
+async function syncSchemas() {
+  toast('Sincronizando schemas...');
+  const result = await api('/schemas/sync', { method: 'POST' });
+  toast(result.message);
+  loadSchemasConfig();
+}
+
+// ─── Activity ───
+const activityLog = [];
+
+function addActivity(msg, method, ms) {
+  const now = new Date();
+  activityLog.push({
+    time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    msg: msg.length > 120 ? msg.slice(0, 120) + '...' : msg,
+    method, ms
+  });
+}
+
+async function loadActivity() {
+  const el = document.getElementById('activity-log');
+  if (activityLog.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:32px"><div class="empty-text">Nenhuma atividade registrada</div></div>';
+    return;
+  }
+  el.innerHTML = activityLog.slice().reverse().map(a => `
+    <div class="activity-item">
+      <div class="activity-time">${a.time}</div>
+      <div class="activity-msg">${escHtml(a.msg)}</div>
+      <div class="activity-method"><span class="badge badge-${a.method === 'regex' ? 'accent' : a.method === 'llm' ? 'success' : 'muted'}">${a.method}</span></div>
+    </div>
+  `).join('');
+}
+
+// ─── Alerts ───
+let _alertEditingId = null;
+
+async function loadAlerts() {
+  try {
+    const [alerts, stats] = await Promise.all([
+      api('/alerts/'),
+      api('/alerts/stats/summary')
+    ]);
+
+    // Update stats
+    document.getElementById('alert-stat-total').textContent = stats.total_rules;
+    document.getElementById('alert-stat-active').textContent = stats.active_rules;
+    document.getElementById('alert-stat-triggers').textContent = stats.today_triggers;
+    document.getElementById('alert-stat-executions').textContent = stats.today_executions;
+
+    // Render alerts
+    const container = document.getElementById('alerts-list');
+    if (!alerts.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔔</div>
+          <div class="empty-text">Nenhuma regra de alerta</div>
+          <button class="btn btn-primary" onclick="openNewAlertModal()">+ Criar Primeira Regra</button>
+        </div>`;
+      return;
+    }
+
+    const condLabels = { gt: '>', lt: '<', gte: '≥', lte: '≤', eq: '=', neq: '≠' };
+    container.innerHTML = alerts.map(a => `
+      <div class="rule-card">
+        <div class="rule-info">
+          <div class="rule-name">
+            <span style="color:${a.is_active ? 'var(--green)' : 'var(--text-subtle)'}">●</span>
+            ${a.name}
+          </div>
+          <div class="rule-detail">
+            ${a.connection_name} — ${a.query.substring(0, 60)}${a.query.length > 60 ? '...' : ''}
+          </div>
+          <div class="rule-detail" style="color:var(--text-muted)">
+            ${condLabels[a.condition] || '?'} ${a.threshold} · a cada ${a.interval_minutes}min · ${(a.channels || []).join(', ') || 'sem canal'}
+            ${a.last_value !== null ? ` · último: ${a.last_value}` : ''}
+          </div>
+        </div>
+        <div class="rule-actions">
+          <button class="btn btn-sm btn-ghost" onclick="testAlert(${a.id})" title="Testar">▶</button>
+          <button class="btn btn-sm btn-ghost" onclick="editAlert(${a.id})" title="Editar">✎</button>
+          <button class="btn btn-sm btn-ghost" onclick="deleteAlert(${a.id})" title="Excluir" style="color:var(--red)">✕</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    console.error('loadAlerts error:', e);
+  }
+}
+
+async function loadAlertConnections() {
+  const conns = await api('/connections/');
+  const sel = document.getElementById('alert-connection');
+  sel.innerHTML = conns.map(c => `<option value="${c.name}">${c.name} (${c.db_type})</option>`).join('');
+}
+
+async function loadAlertChannels() {
+  const channels = await api('/channels/');
+  const container = document.getElementById('alert-channels-checkboxes');
+  container.innerHTML = channels.map(c => `
+    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <input type="checkbox" value="${c.name}" class="alert-channel-cb">
+      ${c.name}
+    </label>
+  `).join('');
+}
+
+function openNewAlertModal() {
+  _alertEditingId = null;
+  document.getElementById('alert-modal-title').textContent = 'Nova Regra de Alerta';
+  document.getElementById('alert-edit-id').value = '';
+  document.getElementById('alert-name').value = '';
+  document.getElementById('alert-desc').value = '';
+  document.getElementById('alert-query').value = '';
+  document.getElementById('alert-column').value = '';
+  document.getElementById('alert-condition').value = 'gt';
+  document.getElementById('alert-threshold').value = '0';
+  document.getElementById('alert-interval').value = '5';
+  loadAlertConnections();
+  loadAlertChannels().then(() => {
+    document.querySelectorAll('.alert-channel-cb').forEach(cb => cb.checked = false);
+  });
+  showModal('alert-modal');
+}
+
+async function editAlert(id) {
+  const alert = await api(`/alerts/${id}`);
+  _alertEditingId = id;
+  document.getElementById('alert-modal-title').textContent = 'Editar Regra de Alerta';
+  document.getElementById('alert-edit-id').value = id;
+  document.getElementById('alert-name').value = alert.name;
+  document.getElementById('alert-desc').value = alert.description || '';
+  document.getElementById('alert-query').value = alert.query;
+  document.getElementById('alert-column').value = alert.column_name || '';
+  document.getElementById('alert-condition').value = alert.condition;
+  document.getElementById('alert-threshold').value = alert.threshold;
+  await loadAlertConnections();
+  document.getElementById('alert-connection').value = alert.connection_name;
+  // Set schedule fields based on alert data
+  setScheduleFields(alert.schedule_type || 'interval', alert.interval_minutes, alert.cron_expr);
+  await loadAlertChannels();
+  const activeChannels = alert.channels || [];
+  document.querySelectorAll('.alert-channel-cb').forEach(cb => {
+    cb.checked = activeChannels.includes(cb.value);
+  });
+  showModal('alert-modal');
+}
+
+async function saveAlert() {
+  const scheduleType = document.getElementById('alert-schedule-type').value;
+  const data = {
+    name: document.getElementById('alert-name').value.trim(),
+    description: document.getElementById('alert-desc').value.trim(),
+    connection_name: document.getElementById('alert-connection').value,
+    query: document.getElementById('alert-query').value.trim(),
+    column_name: document.getElementById('alert-column').value.trim(),
+    condition: document.getElementById('alert-condition').value,
+    threshold: parseFloat(document.getElementById('alert-threshold').value) || 0,
+    schedule_type: scheduleType,
+    channels: Array.from(document.querySelectorAll('.alert-channel-cb:checked')).map(cb => cb.value),
+    is_active: true,
+  };
+
+  if (scheduleType === 'interval') {
+    const value = parseInt(document.getElementById('alert-interval-value').value) || 5;
+    const unit = document.getElementById('alert-interval-unit').value;
+    // Convert to minutes
+    if (unit === 'hours') data.interval_minutes = value * 60;
+    else if (unit === 'days') data.interval_minutes = value * 1440;
+    else data.interval_minutes = value;
+  } else {
+    // Cron
+    const preset = document.getElementById('alert-cron-preset').value;
+    let cronExpr = '';
+    
+    if (preset === 'daily') {
+      const hour = document.getElementById('alert-cron-daily-hour').value;
+      const [h, m] = hour.split(':');
+      cronExpr = `${parseInt(m)} ${parseInt(h)} * * *`;
+    } else if (preset === 'weekly') {
+      const day = document.getElementById('alert-cron-weekly-day').value;
+      const hour = document.getElementById('alert-cron-weekly-hour').value;
+      const [h, m] = hour.split(':');
+      cronExpr = `${parseInt(m)} ${parseInt(h)} * * ${day}`;
+    } else if (preset === 'monthly') {
+      const day = document.getElementById('alert-cron-monthly-day').value;
+      const hour = document.getElementById('alert-cron-monthly-hour').value;
+      const [h, m] = hour.split(':');
+      cronExpr = `${parseInt(m)} ${parseInt(h)} ${day} * *`;
+    } else {
+      cronExpr = document.getElementById('alert-cron-custom-expr').value;
+    }
+    
+    data.cron_expr = cronExpr;
+    data.interval_minutes = 0;
+  }
+
+  if (!data.name || !data.query) {
+    toast('Preencha nome e query', 'error');
+    return;
+  }
+
+  try {
+    if (_alertEditingId) {
+      await api(`/alerts/${_alertEditingId}`, { method: 'PUT', body: JSON.stringify(data) });
+      toast('Regra atualizada');
+    } else {
+      await api('/alerts/', { method: 'POST', body: JSON.stringify(data) });
+      toast('Regra criada');
+    }
+    hideModal('alert-modal');
+    loadAlerts();
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
+// Schedule UI helpers
+function updateScheduleUI() {
+  const type = document.getElementById('alert-schedule-type').value;
+  document.getElementById('schedule-interval').style.display = type === 'interval' ? '' : 'none';
+  document.getElementById('schedule-cron').style.display = type === 'cron' ? '' : 'none';
+}
+
+function updateCronUI() {
+  const preset = document.getElementById('alert-cron-preset').value;
+  document.getElementById('cron-daily').style.display = preset === 'daily' ? '' : 'none';
+  document.getElementById('cron-weekly').style.display = preset === 'weekly' ? '' : 'none';
+  document.getElementById('cron-monthly').style.display = preset === 'monthly' ? '' : 'none';
+  document.getElementById('cron-custom').style.display = preset === 'custom' ? '' : 'none';
+}
+
+function setScheduleFields(scheduleType, intervalMinutes, cronExpr) {
+  document.getElementById('alert-schedule-type').value = scheduleType || 'interval';
+  updateScheduleUI();
+  
+  if (scheduleType === 'cron' && cronExpr) {
+    // Parse cron expression to set UI
+    const parts = cronExpr.split(' ');
+    if (parts.length >= 5) {
+      const [min, hour, dayMonth, , dayWeek] = parts;
+      if (dayMonth !== '*' && dayWeek === '*') {
+        // Monthly
+        document.getElementById('alert-cron-preset').value = 'monthly';
+        document.getElementById('alert-cron-monthly-day').value = dayMonth;
+        document.getElementById('alert-cron-monthly-hour').value = `${hour.padStart(2,'0')}:${min.padStart(2,'0')}`;
+      } else if (dayWeek !== '*' && dayMonth === '*') {
+        // Weekly
+        document.getElementById('alert-cron-preset').value = 'weekly';
+        document.getElementById('alert-cron-weekly-day').value = dayWeek;
+        document.getElementById('alert-cron-weekly-hour').value = `${hour.padStart(2,'0')}:${min.padStart(2,'0')}`;
+      } else {
+        // Daily or custom
+        document.getElementById('alert-cron-preset').value = 'daily';
+        document.getElementById('alert-cron-daily-hour').value = `${hour.padStart(2,'0')}:${min.padStart(2,'0')}`;
+      }
+      updateCronUI();
+    }
+  } else {
+    // Interval
+    document.getElementById('alert-cron-preset').value = 'daily';
+    const minutes = intervalMinutes || 5;
+    if (minutes >= 1440 && minutes % 1440 === 0) {
+      document.getElementById('alert-interval-value').value = minutes / 1440;
+      document.getElementById('alert-interval-unit').value = 'days';
+    } else if (minutes >= 60 && minutes % 60 === 0) {
+      document.getElementById('alert-interval-value').value = minutes / 60;
+      document.getElementById('alert-interval-unit').value = 'hours';
+    } else {
+      document.getElementById('alert-interval-value').value = minutes;
+      document.getElementById('alert-interval-unit').value = 'minutes';
+    }
+  }
+}
+
+async function deleteAlert(id) {
+  const confirmed = await showConfirm('Excluir Regra', 'Tem certeza que deseja excluir esta regra de alerta?');
+  if (!confirmed) return;
+  try {
+    await api(`/alerts/${id}`, { method: 'DELETE' });
+    toast('Regra excluída');
+    loadAlerts();
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function testAlert(id) {
+  toast('Testando regra...', 'info');
+  try {
+    const result = await api(`/alerts/${id}/test`, { method: 'POST' });
+    const status = result.triggered ? '🔴 TRIGGERED' : '🟢 OK';
+    toast(`${status} — Valor: ${result.value}, Threshold: ${result.threshold}`);
+  } catch(e) {
+    toast('Erro no teste: ' + e.message, 'error');
+  }
+}
+
+// ─── Settings ───
+async function openSettings() {
+  showModal('settings-modal');
+  const el = document.getElementById('settings-content');
+  el.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  try {
+    const h = await api('/health');
+    let tgStatus = { polling: false, token_configured: false };
+    try { tgStatus = await api('/telegram/status'); } catch {}
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Sistema</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="card" style="padding:12px">
+              <div style="font-size:11px;color:var(--text-muted)">Versão</div>
+              <div style="font-size:15px;font-weight:590">${h.version}</div>
+            </div>
+            <div class="card" style="padding:12px">
+              <div style="font-size:11px;color:var(--text-muted)">Status</div>
+              <div style="font-size:15px;font-weight:590;color:var(--success)">${h.status === 'ok' ? '● Online' : '● Offline'}</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:8px">LLM</div>
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:500">${h.llm_model || 'Não configurado'}</div>
+                <div style="font-size:11px;color:var(--text-muted)">Provider: 9router (OpenAI-compatible)</div>
+              </div>
+              <span class="badge ${h.llm_enabled ? 'badge-success' : 'badge-danger'}">${h.llm_enabled ? 'Ativo' : 'Inativo'}</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Telegram</div>
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:500">@Junermesbot</div>
+                <div style="font-size:11px;color:var(--text-muted)">Polling: ${tgStatus.polling ? 'Ativo' : 'Inativo'}</div>
+              </div>
+              <span class="badge ${tgStatus.polling ? 'badge-success' : 'badge-muted'}">${tgStatus.polling ? '● Rodando' : '● Parado'}</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Recursos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="card" style="padding:12px;text-align:center">
+              <div style="font-size:20px;font-weight:590">${h.adapters.length}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Conexões</div>
+            </div>
+            <div class="card" style="padding:12px;text-align:center">
+              <div style="font-size:20px;font-weight:590">${h.rules.length}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Regras</div>
+            </div>
+            <div class="card" style="padding:12px;text-align:center">
+              <div style="font-size:20px;font-weight:590">${h.channels.length}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Canais</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch {
+    el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">Erro ao carregar configurações</div>';
+  }
+}
+
+// ─── Auth ───
+let currentUser = null;
+
+function showLogin() {
+  localStorage.removeItem('datahub_token');
+  currentUser = null;
+  document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+function hideLogin() {
+  document.getElementById('login-overlay').classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+  const tabs = document.querySelectorAll('.login-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  document.getElementById('login-error').style.display = 'none';
+  if (tab === 'login') {
+    tabs[0].classList.add('active');
+    document.getElementById('login-form').style.display = '';
+    document.getElementById('register-form').style.display = 'none';
+  } else {
+    tabs[1].classList.add('active');
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = '';
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doLogin() {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!username || !password) { showAuthError('Preencha usuario e senha'); return; }
+  try {
+    const r = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { showAuthError(data.detail || 'Falha no login'); return; }
+    localStorage.setItem('datahub_token', data.access_token);
+    await loadCurrentUser();
+    hideLogin();
+    navigate('dashboard');
+  } catch (e) {
+    showAuthError('Erro ao conectar ao servidor');
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!username || !email || !password) { showAuthError('Preencha todos os campos'); return; }
+  try {
+    const r = await fetch(API + '/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { showAuthError(data.detail || 'Falha no registro'); return; }
+    // Auto-login after register
+    const lr = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const ld = await lr.json();
+    if (lr.ok) {
+      localStorage.setItem('datahub_token', ld.access_token);
+      await loadCurrentUser();
+      hideLogin();
+      navigate('dashboard');
+    } else {
+      switchAuthTab('login');
+      showAuthError('Conta criada! Faca login.');
+    }
+  } catch (e) {
+    showAuthError('Erro ao conectar ao servidor');
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('datahub_token');
+  currentUser = null;
+  document.getElementById('auth-username-display').textContent = '';
+  showLogin();
+}
+
+async function loadCurrentUser() {
+  try {
+    const user = await api('/auth/me');
+    currentUser = user;
+    document.getElementById('auth-username-display').textContent = user.username;
+    document.getElementById('auth-user-info').style.display = 'flex';
+  } catch {
+    showLogin();
+  }
+}
+
+// Login Enter key
+document.getElementById('auth-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('auth-username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('auth-password').focus();
+});
+document.getElementById('reg-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doRegister();
+});
+
+// ─── Util ───
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Init ───
+(async function init() {
+  // Set language toggle button text
+  const langBtn = document.getElementById('lang-toggle');
+  if (langBtn) langBtn.textContent = currentLang === 'pt' ? 'EN' : 'PT';
+  document.documentElement.lang = currentLang === 'pt' ? 'pt-BR' : 'en';
+  
+  const token = getAuthToken();
+  if (token) {
+    try {
+      await loadCurrentUser();
+      hideLogin();
+    } catch {
+      showLogin();
+    }
+  } else {
+    showLogin();
+  }
+  navigate(location.hash.slice(1) || 'dashboard');
+  
+  // Inicia WebSocket para updates em tempo real
+  initWebSocket();
+})();
+
+// ─── WebSocket ───
+let ws = null;
+let wsReconnectTimer = null;
+
+function initWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/ws`;
+  
+  try {
+    ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('[WS] Conectado');
+      // Ping periódico para manter viva
+      setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send('ping');
+        }
+      }, 30000);
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleWsEvent(msg);
+      } catch {}
+    };
+    
+    ws.onclose = () => {
+      console.log('[WS] Desconectado, reconectando em 5s...');
+      wsReconnectTimer = setTimeout(initWebSocket, 5000);
+    };
+    
+    ws.onerror = () => {
+      ws.close();
+    };
+  } catch {}
+}
+
+function handleWsEvent(msg) {
+  if (msg.type === 'pong') return;
+  
+  // Toast notification para eventos importantes
+  if (msg.type === 'message_received') {
+    const data = msg.data;
+    showToast(`${data.channel.toUpperCase()}: ${data.user} — ${data.text}`, 'info');
+    // Atualiza dashboard se estiver visível
+    if (document.querySelector('#page-dashboard').style.display !== 'none') {
+      loadDashboard();
+    }
+  }
+  
+  if (msg.type === 'message_sent') {
+    const data = msg.data;
+    const icon = data.success ? '✓' : '✗';
+    const color = data.success ? 'var(--green)' : 'var(--red)';
+    showToast(`${icon} ${data.channel.toUpperCase()} (${data.method})`, data.success ? 'success' : 'error');
+    // Atualiza activity log
+    if (document.querySelector('#page-activity').style.display !== 'none') {
+      loadActivity();
+    }
+  }
+}
+</script>
+</body>
+</html>

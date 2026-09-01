@@ -1,0 +1,84 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Coleta logs de TODOS os containers Docker
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Filtrar só containers com label logging=enabled
+      - source_labels: ["__meta_docker_container_label_logging"]
+        regex: "enabled"
+        action: keep
+      # Usar nome do container como label
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+      # Label do serviço
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+      # Label do projeto
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: "project"
+      # Container ID
+      - source_labels: ["__meta_docker_container_id"]
+        target_label: "container_id"
+      # Stream (stdout/stderr)
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: "stream"
+
+    pipeline_stages:
+      # Parse JSON logs (nosso formato estruturado)
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            logger: logger
+            correlation_id: correlation_id
+            data: data
+            ts: ts
+
+      # Usar o timestamp do log se disponível
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+
+      # Mapear levels do Python para Loki
+      - labels:
+          level:
+          logger:
+
+      # Adicionar dados extras como campos
+      - labels:
+          correlation_id:
+
+      # Output como JSON se não for JSON já
+      - output:
+          source: output
+
+  # Coleta logs de aplicação Python (stdout)
+  - job_name: app-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: datahub
+          __path__: /var/log/app/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            logger: logger
+      - labels:
+          level:
+          logger:

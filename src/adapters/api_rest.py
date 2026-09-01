@@ -29,11 +29,12 @@ class APIRestAdapter(BaseAdapter):
         rows = data if isinstance(data[0], dict) else [{"value": d} for d in data]
         return QueryResult(columns=columns, rows=rows, row_count=len(rows))
 
-    async def list_tables(self) -> list[str]:
+    async def list_tables(self, schema: str = None) -> list[dict]:
         """Retorna endpoints disponíveis definidos na config."""
-        return self.config.get("endpoints", [])
+        eps = self.config.get("endpoints", [])
+        return [{"schema": "api", "table": e} for e in eps]
 
-    async def describe_table(self, table: str) -> list[dict]:
+    async def describe_table(self, table: str, schema: str = "api") -> list[dict]:
         """Faz request de amostra pra detectar campos."""
         try:
             result = await self.execute(table)

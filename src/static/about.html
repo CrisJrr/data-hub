@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Hub — Sobre o Projeto</title>
+  <style>
+    :root {
+      --bg: #08090a;
+      --bg-elevated: #111213;
+      --card: #191a1b;
+      --border: #222325;
+      --text: #f5f5f5;
+      --text-muted: #a0a0a0;
+      --text-dim: #666;
+      --accent: #5e6ad2;
+      --accent-soft: rgba(94,106,210,.12);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+    .gradient {
+      background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .accent { color: var(--accent); }
+
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 64px; }
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: clamp(36px, 8vw, 56px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 60ch;
+      margin: 0 auto;
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 40px;
+    }
+    .stat { text-align: center; }
+    .stat-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Sections */
+    .section { margin-bottom: 56px; }
+    .section h2 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    .section > p {
+      color: var(--text-muted);
+      font-size: 17px;
+      margin-bottom: 24px;
+      max-width: 70ch;
+    }
+
+    /* Cards */
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: left;
+      transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+    .card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+    /* Flow steps */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      width: 100%;
+      text-align: left;
+      transition: border-color .2s, transform .2s;
+    }
+    .flow-step:hover { border-color: var(--accent); transform: translateX(4px); }
+    .flow-step.reverse { flex-direction: row-reverse; text-align: right; }
+    .flow-step.reverse:hover { transform: translateX(-4px); }
+    .flow-icon {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(94,106,210,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .flow-content { flex: 1; }
+    .flow-content h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    .flow-content p { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+    /* Use cases */
+    .use-case {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+    .use-case h3 { color: var(--accent); font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .use-case p { font-size: 15px; color: var(--text-muted); margin-bottom: 12px; }
+    .use-case .example {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--card);
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: inline-block;
+    }
+
+    /* Tech pills */
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      transition: border-color .2s;
+    }
+    .pill:hover { border-color: var(--accent); }
+    .pill strong { color: var(--text); }
+    .pill span { color: var(--text-dim); margin-left: 8px; }
+
+    /* CTA */
+    .cta {
+      text-align: center;
+      margin-top: 56px;
+      padding: 40px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .cta h2 { font-size: 24px; margin-bottom: 16px; }
+    .cta p { color: var(--text-muted); margin-bottom: 24px; }
+    .cmd-box {
+      display: inline-block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 30px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 56px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="badge">v0.1.0</div>
+      <h1 class="gradient">Data Hub</h1>
+      <p class="subtitle">Hub central que conecta múltiplas bases de dados<br>e opera bots de mensageria com inteligência artificial.</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-value">5</div><div class="stat-label">Databases</div></div>
+        <div class="stat"><div class="stat-value">4</div><div class="stat-label">Canais</div></div>
+        <div class="stat"><div class="stat-value">∞</div><div class="stat-label">Alertas</div></div>
+        <div class="stat"><div class="stat-value">24/7</div><div class="stat-label">Monitoramento</div></div>
+      </div>
+    </div>
+
+    <!-- O problema -->
+    <div class="section">
+      <h2>O problema</h2>
+      <p>Empresas possuem dados espalhados em vários bancos. Acessar exige ferramentas diferentes, conhecimento técnico, e ninguém sabe o que está acontecendo em tempo real.</p>
+      <div class="grid grid-3">
+        <div class="card">
+          <h3>Dados fragmentados</h3>
+          <p>PostgreSQL aqui, MySQL ali, planilha acolá. Nenhuma visão unificada.</p>
+        </div>
+        <div class="card">
+          <h3>Dependência técnica</h3>
+          <p>Para tirar um dado simples, precisa de um analista ou desenvolvedor.</p>
+        </div>
+        <div class="card">
+          <h3>Sem alertas</h3>
+          <p>Ninguém é notificado quando algo importante acontece. Problemas são descobertos tarde demais.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- A solução -->
+    <div class="section">
+      <h2>A solução: <span class="accent">Data Hub</span></h2>
+      <p>Uma única plataforma que conecta seus bancos, interpreta perguntas em linguagem natural e monitora seus dados automaticamente — enviando alertas no Telegram, WhatsApp, Slack ou Teams.</p>
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>Pergunte em linguagem natural</h3>
+          <p>"Quanto vendemos hoje?" — o sistema interpreta, gera a query e responde.</p>
+        </div>
+        <div class="card">
+          <h3>Alertas automáticos</h3>
+          <p>Configure regras e receba notificações quando algo precisar de atenção.</p>
+        </div>
+        <div class="card">
+          <h3>Multi-banco</h3>
+          <p>PostgreSQL, MySQL, SQLite, MongoDB e APIs REST — tudo em um lugar.</p>
+        </div>
+        <div class="card">
+          <h3>Multi-canal</h3>
+          <p>Telegram, WhatsApp, Slack, Google Chat e Teams. Acesse de qualquer lugar.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Como funciona -->
+    <div class="section">
+      <h2>Como funciona</h2>
+      <p>Fluxo simplificado: você pergunta, o sistema entende, consulta o banco e responde — tudo automático.</p>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-icon">💬</div>
+          <div class="flow-content">
+            <h3>Você pergunta</h3>
+            <p>No Telegram, WhatsApp, Slack ou na web: "Quanto vendemos ontem?"</p>
+          </div>
+        </div>
+        <div class="flow-step reverse">
+          <div class="flow-icon">🧠</div>
+          <div class="flow-content">
+            <h3>IA interpreta</h3>
+            <p>O modelo (9router) entende a intenção, pega o schema do banco e gera SQL seguro (apenas SELECT).</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-icon">🗄️</div>
+          <div class="flow-content">
+            <h3>Consulta o banco</h3>
+            <p>Executa a query no PostgreSQL, MySQL, SQLite, MongoDB ou API REST configurado.</p>
+          </div>
+        </div>
+        <div class="flow-step reverse">
+          <div class="flow-icon">📊</div>
+          <div class="flow-content">
+            <h3>Responde formatado</h3>
+            <p>Devolve a resposta no mesmo canal: tabela, número ou texto — do jeito que você pediu.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Casos de uso -->
+    <div class="section">
+      <h2>Casos de uso</h2>
+      <div class="use-case">
+        <h3>1. Monitoramento de estoque</h3>
+        <p>Gerente quer ser alertado quando estoque cair abaixo de 10 unidades.</p>
+        <div class="example">"Me avise quando estoque do Produto X cair abaixo de 10"</div>
+      </div>
+      <div class="use-case">
+        <h3>2. Relatório diário de vendas</h3>
+        <p>Diretoria recebe resumo das vendas todo dia às 8h no Telegram.</p>
+        <div class="example">"Quanto vendemos ontem? Me envia todo dia às 8h"</div>
+      </div>
+      <div class="use-case">
+        <h3>3. Alerta de faturamento</h3>
+        <p>Time financeiro é notificado no Slack quando faturamento ultrapassar R$ 100k.</p>
+        <div class="example">"Avise no Slack quando faturamento > 100.000"</div>
+      </div>
+      <div class="use-case">
+        <h3>4. Consulta via WhatsApp</h3>
+        <p>Vendedor em campo pergunta estoque pelo WhatsApp e recebe resposta em segundos.</p>
+        <div class="example">"Qual o estoque do Produto Y?" → Resposta via WhatsApp</div>
+      </div>
+      <div class="use-case">
+        <h3>5. Alerta de metas</h3>
+        <p>Marketing é notificado quando banco atingir 1.000 clientes cadastrados.</p>
+        <div class="example">"Avise quando tivermos mais de 1.000 clientes"</div>
+      </div>
+      <div class="use-case">
+        <h3>6. Agendamento flexível</h3>
+        <p>Alertas rodam a cada X minutos, horas, dias — ou em horários específicos via cron.</p>
+        <div class="example">Todo dia às 08:00 · Toda segunda · A cada 30 min</div>
+      </div>
+    </div>
+
+    <!-- Tecnologias -->
+    <div class="section">
+      <h2>Tecnologias</h2>
+      <p>Escolhidas por confiabilidade, performance e ecossistema.</p>
+      <div class="pills">
+        <div class="pill"><strong>Python + FastAPI</strong><span>Backend rápido, async</span></div>
+        <div class="pill"><strong>Docker</strong><span>Deploy consistente</span></div>
+        <div class="pill"><strong>PostgreSQL</strong><span>Dados operacionais</span></div>
+        <div class="pill"><strong>Redis</strong><span>Cache e rate limiting</span></div>
+        <div class="pill"><strong>LiteLLM</strong><span>Interface unificada de IA</span></div>
+        <div class="pill"><strong>9router</strong><span>Provedor LLM local</span></div>
+        <div class="pill"><strong>Telegram Bot API</strong><span>Integração gratuita</span></div>
+        <div class="pill"><strong>Evolution API</strong><span>WhatsApp self-hosted</span></div>
+        <div class="pill"><strong>APScheduler</strong><span>Agendamento de tarefas</span></div>
+        <div class="pill"><strong>SQLAlchemy</strong><span>ORM e persistência</span></div>
+        <div class="pill"><strong>Loki + Promtail</strong><span>Logging centralizado</span></div>
+        <div class="pill"><strong>JWT</strong><span>Autenticação segura</span></div>
+      </div>
+    </div>
+
+    <!-- Por que essas escolhas -->
+    <div class="section">
+      <h2>Por que essas escolhas?</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>Python + FastAPI</h3>
+          <p>Performance assíncrona, documentação automática, ecossistema rico de bibliotecas de dados.</p>
+        </div>
+        <div class="card">
+          <h3>Docker</h3>
+          <p>Um comando para subir tudo. Funciona igual em qualquer máquina.</p>
+        </div>
+        <div class="card">
+          <h3>LiteLLM + 9router</h3>
+          <p>Interface única para qualquer provedor de IA. Sem lock-in. Troque o modelo sem mudar código.</p>
+        </div>
+        <div class="card">
+          <h3>Redis</h3>
+          <p>Cache ultrarrápido + rate limiting com sliding window. Essencial para APIs.</p>
+        </div>
+        <div class="card">
+          <h3>Telegram + WhatsApp</h3>
+          <p>Os dois canais mais usados no Brasil. Bot do Telegram gratuito. WhatsApp via Evolution API self-hosted.</p>
+        </div>
+        <div class="card">
+          <h3>Loki + Promtail</h3>
+          <p>Logging estruturado JSON com correlation IDs. Integrado ao Grafana para dashboards.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Funcionalidades -->
+    <div class="section">
+      <h2>Funcionalidades</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <h3>Intent Engine</h3>
+          <p>Regex para respostas rápidas, LLM como fallback para perguntas complexas.</p>
+        </div>
+        <div class="card">
+          <h3>Frontend SPA</h3>
+          <p>Painel web inspirado no Linear. Dark theme, i18n PT/EN.</p>
+        </div>
+        <div class="card">
+          <h3>JWT Auth</h3>
+          <p>Autenticação completa com tokens. Credenciais configuráveis.</p>
+        </div>
+        <div class="card">
+          <h3>Rate Limiting</h3>
+          <p>Sliding window via Redis. 3 tiers: geral, LLM e auth.</p>
+        </div>
+        <div class="card">
+          <h3>Structured Logs</h3>
+          <p>JSON com correlation IDs. Pronto para Loki/Grafana.</p>
+        </div>
+        <div class="card">
+          <h3>Alertas com Cron</h3>
+          <p>Intervalo ou agendamento. Minutos, horas, dias — ou expressão cron.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      <h2>Pronto para usar</h2>
+      <p>Um comando para subir. Uma interface para gerenciar.<br>Alertas automáticos nos canais que sua equipe já usa.</p>
+      <div class="cmd-box">docker compose up -d</div>
+    </div>
+
+    <footer>
+      <p>Data Hub v0.1.0 — Python · FastAPI · Docker · IA</p>
+    </footer>
+  </div>
+</body>
+</html>

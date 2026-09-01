@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Data Hub — Apresentação</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #08090a;
+      --bg-elevated: #111213;
+      --card: #191a1b;
+      --border: #222325;
+      --text: #f5f5f5;
+      --text-muted: #a0a0a0;
+      --text-dim: #666;
+      --accent: #5e6ad2;
+      --accent-soft: rgba(94,106,210,.12);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Slide system */
+    .slide {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+      padding: clamp(32px, 7vh, 72px) clamp(16px, 4vw, 100px);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .slide.active { display: flex; }
+
+    /* Navigation - touch friendly */
+    .nav {
+      position: fixed;
+      bottom: max(24px, env(safe-area-inset-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: clamp(12px, 3vw, 24px);
+      z-index: 100;
+      padding: 0 16px;
+    }
+    .nav button {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      width: clamp(44px, 12vw, 56px);
+      height: clamp(44px, 12vw, 56px);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: clamp(18px, 4vw, 24px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav button:active { transform: scale(0.95); }
+    .nav button:hover { background: rgba(255,255,255,.14); }
+    .nav .counter {
+      font-size: clamp(12px, 3vw, 14px);
+      color: var(--text-muted);
+      min-width: 60px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Progress bar */
+    .progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width .3s ease;
+      z-index: 100;
+    }
+
+    /* Typography - fluid */
+    h1 { 
+      font-size: clamp(36px, 8vw, 64px); 
+      font-weight: 600; 
+      letter-spacing: -0.03em; 
+      line-height: 1.1; 
+      max-width: 90%;
+    }
+    h2 { 
+      font-size: clamp(28px, 6vw, 42px); 
+      font-weight: 600; 
+      letter-spacing: -0.02em; 
+      margin-bottom: clamp(20px, 4vh, 32px); 
+      line-height: 1.2; 
+      max-width: 90%;
+    }
+    h3 { 
+      font-size: clamp(18px, 3.5vw, 22px); 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+    }
+    p { 
+      font-size: clamp(15px, 2.5vw, 20px); 
+      color: var(--text-muted); 
+      line-height: 1.6; 
+      max-width: 75ch;
+    }
+    .subtitle { 
+      font-size: clamp(16px, 3vw, 22px); 
+      color: var(--text-muted); 
+      margin-top: 16px; 
+      max-width: 60ch;
+    }
+    .accent { color: var(--accent); }
+    .dim { color: var(--text-dim); }
+
+    /* Gradient text */
+    .gradient {
+      background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Cards grid - responsive */
+    .grid { 
+      display: grid; 
+      gap: clamp(16px, 3vw, 24px); 
+      width: 100%; 
+      max-width: 1000px;
+      margin-top: clamp(24px, 5vh, 40px);
+    }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 45%, 400px), 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(clamp(260px, 30%, 320px), 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(20px, 4vw, 28px);
+      text-align: left;
+      transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card h3 { color: var(--text); margin-bottom: 10px; }
+    .card p { font-size: clamp(13px, 2.2vw, 15px); color: var(--text-muted); }
+
+    /* Stats */
+    .stats { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: clamp(12px, 3vw, 28px); 
+      margin-top: clamp(24px, 5vh, 40px);
+    }
+    .stat { text-align: center; }
+    .stat-value { 
+      font-size: clamp(36px, 8vw, 56px); 
+      font-weight: 700; 
+      color: var(--accent); 
+      line-height: 1;
+    }
+    .stat-label { 
+      font-size: clamp(12px, 2.5vw, 15px); 
+      color: var(--text-muted); 
+      margin-top: 8px; 
+    }
+
+    /* Use case */
+    .use-case {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(16px, 3vw, 22px);
+      margin-bottom: clamp(10px, 2vw, 16px);
+      text-align: left;
+      width: 100%;
+      max-width: 800px;
+    }
+    .use-case h3 { color: var(--accent); margin-bottom: 10px; }
+    .use-case p { font-size: clamp(14px, 2.5vw, 17px); margin-bottom: 12px; }
+    .use-case .example {
+      margin-top: 12px;
+      font-family: 'SF Mono', Monaco, 'Fira Code', monospace;
+      font-size: clamp(12px, 2.2vw, 14px);
+      color: var(--text);
+      background: var(--card);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: inline-block;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    /* Tech pills */
+    .pills { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 10px; 
+      margin-top: clamp(20px, 4vh, 32px);
+      width: 100%;
+      max-width: 900px;
+    }
+    .pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: clamp(10px, 2.5vw, 14px) clamp(14px, 3vw, 20px);
+      font-size: clamp(12px, 2.2vw, 14px);
+      transition: border-color .2s;
+    }
+    .pill:hover { border-color: var(--accent); }
+    .pill strong { color: var(--text); }
+    .pill span { color: var(--text-dim); margin-left: 8px; }
+
+    /* Flow diagram replacement - simple visual steps */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(12px, 2.5vw, 18px);
+      margin-top: clamp(20px, 4vh, 32px);
+      width: 100%;
+      max-width: 560px;
+      box-sizing: border-box;
+    }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: clamp(12px, 3vw, 18px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: clamp(12px, 2.5vw, 18px);
+      width: 100%;
+      text-align: left;
+      transition: border-color .2s, transform .2s;
+      box-sizing: border-box;
+    }
+    .flow-step:hover { border-color: var(--accent); transform: translateX(4px); }
+    .flow-step.reverse { flex-direction: row-reverse; text-align: right; }
+    .flow-step.reverse:hover { transform: translateX(-4px); }
+    .flow-icon {
+      flex-shrink: 0;
+      width: clamp(48px, 10vw, 60px);
+      height: clamp(48px, 10vw, 60px);
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(94,106,210,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(20px, 4vw, 26px);
+    }
+    .flow-content { flex: 1; min-width: 0; }
+    .flow-content h3 { color: var(--text); font-size: clamp(15px, 2.8vw, 18px); margin-bottom: 4px; }
+    .flow-content p { font-size: clamp(12px, 2.2vw, 14px); color: var(--text-muted); margin: 0; max-width: none; }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: clamp(6px, 1.5vw, 10px) clamp(14px, 3vw, 20px);
+      border-radius: 999px;
+      font-size: clamp(11px, 2.2vw, 13px);
+      font-weight: 500;
+      margin-bottom: clamp(16px, 3vh, 24px);
+    }
+
+    /* Keyboard/touch hint */
+    .hint {
+      position: fixed;
+      bottom: max(88px, env(safe-area-inset-bottom) + 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(11px, 2.2vw, 13px);
+      color: var(--text-dim);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Slide variants */
+    .slide-hero { align-items: center; }
+    .slide-center { align-items: center; text-align: center; }
+
+    /* Command box */
+    .cmd-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: clamp(14px, 2.5vw, 20px) clamp(18px, 3.5vw, 30px);
+      font-family: 'SF Mono', Monaco, 'Fira Code', monospace;
+      font-size: clamp(13px, 2.5vw, 17px);
+      color: var(--accent);
+      margin-top: clamp(24px, 5vh, 36px);
+      word-break: break-all;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Landscape phone adjustments */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .slide { padding: clamp(20px, 4vh, 36px) clamp(16px, 4vw, 50px); min-height: 100vh; }
+      .hint { display: none; }
+      .nav { bottom: max(16px, env(safe-area-inset-bottom) + 8px); }
+      .stats { gap: clamp(8px, 2vw, 20px); margin-top: clamp(16px, 3vh, 24px); }
+      .flow { gap: clamp(8px, 1.5vw, 12px); margin-top: clamp(12px, 2.5vh, 20px); }
+      .flow-step { padding: clamp(10px, 2vw, 14px); gap: clamp(10px, 2.5vw, 14px); }
+      .flow-icon { width: clamp(40px, 8vw, 48px); height: clamp(40px, 8vw, 48px); font-size: clamp(18px, 3.5vw, 22px); }
+      .use-case { padding: clamp(12px, 2.5vw, 18px); margin-bottom: clamp(8px, 1.5vw, 12px); }
+      .cmd-box { padding: clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px); font-size: clamp(12px, 2.2vw, 15px); margin-top: clamp(16px, 3vh, 24px); }
+      .badge { margin-bottom: clamp(12px, 2.5vh, 18px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <!-- Slide 1: Cover -->
+  <div class="slide slide-hero active" data-slide="1">
+    <div class="badge">v0.1.0</div>
+    <h1 class="gradient">Data Hub</h1>
+    <p class="subtitle">Hub central que conecta múltiplas bases de dados<br>e opera bots de mensageria com inteligência artificial.</p>
+    <div class="stats">
+      <div class="stat"><div class="stat-value">5</div><div class="stat-label">Databases</div></div>
+      <div class="stat"><div class="stat-value">4</div><div class="stat-label">Canais</div></div>
+      <div class="stat"><div class="stat-value">∞</div><div class="stat-label">Alertas</div></div>
+      <div class="stat"><div class="stat-value">24/7</div><div class="stat-label">Monitoramento</div></div>
+    </div>
+  </div>
+
+  <!-- Slide 2: O problema -->
+  <div class="slide" data-slide="2">
+    <h2>O problema</h2>
+    <p>Empresas possuem dados espalhados em vários bancos. Acessar exige ferramentas diferentes, conhecimento técnico, e ninguém sabe o que está acontecendo em tempo real.</p>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>Dados fragmentados</h3>
+        <p>PostgreSQL aqui, MySQL ali, planilha acolá. Nenhuma visão unificada.</p>
+      </div>
+      <div class="card">
+        <h3>Dependência técnica</h3>
+        <p>Para tirar um dado simples, precisa de um analista ou desenvolvedor.</p>
+      </div>
+      <div class="card">
+        <h3>Sem alertas</h3>
+        <p>Ninguém é notificado quando algo importante acontece. Problemas são descobertos tarde demais.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: A solução -->
+  <div class="slide" data-slide="3">
+    <h2>A solução: <span class="accent">Data Hub</span></h2>
+    <p>Uma única plataforma que conecta seus bancos, interpreta perguntas em linguagem natural e monitora seus dados automaticamente — enviando alertas no Telegram, WhatsApp, Slack ou Teams.</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Pergunte em linguagem natural</h3>
+        <p>"Quanto vendemos hoje?" — o sistema interpreta, gera a query e responde.</p>
+      </div>
+      <div class="card">
+        <h3>Alertas automáticos</h3>
+        <p>Configure regras e receba notificações quando algo precisar de atenção.</p>
+      </div>
+      <div class="card">
+        <h3>Multi-banco</h3>
+        <p>PostgreSQL, MySQL, SQLite, MongoDB e APIs REST — tudo em um lugar.</p>
+      </div>
+      <div class="card">
+        <h3>Multi-canal</h3>
+        <p>Telegram, WhatsApp, Slack, Google Chat e Teams. Acesse de qualquer lugar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Como funciona (substitui diagrama ASCII) -->
+  <div class="slide" data-slide="4">
+    <h2>Como funciona</h2>
+    <p style="max-width:60ch">Fluxo simplificado: você pergunta, o sistema entende, consulta o banco e responde — tudo automático.</p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">💬</div>
+        <div class="flow-content">
+          <h3>Você pergunta</h3>
+          <p>No Telegram, WhatsApp, Slack ou na web: "Quanto vendemos ontem?"</p>
+        </div>
+      </div>
+      <div class="flow-step reverse">
+        <div class="flow-icon">🧠</div>
+        <div class="flow-content">
+          <h3>IA interpreta</h3>
+          <p>O modelo (9router) entende a intenção, pega o schema do banco e gera SQL seguro (apenas SELECT).</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">🗄️</div>
+        <div class="flow-content">
+          <h3>Consulta o banco</h3>
+          <p>Executa a query no PostgreSQL, MySQL, SQLite, MongoDB ou API REST configurado.</p>
+        </div>
+      </div>
+      <div class="flow-step reverse">
+        <div class="flow-icon">📊</div>
+        <div class="flow-content">
+          <h3>Responde formatado</h3>
+          <p>Devolve a resposta no mesmo canal: tabela, número ou texto — do jeito que você pediu.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Casos de uso -->
+  <div class="slide" data-slide="5">
+    <h2>Casos de uso</h2>
+    <div class="use-case">
+      <h3>1. Monitoramento de estoque</h3>
+      <p>Gerente quer ser alertado quando estoque cair abaixo de 10 unidades.</p>
+      <div class="example">"Me avise quando estoque do Produto X cair abaixo de 10"</div>
+    </div>
+    <div class="use-case">
+      <h3>2. Relatório diário de vendas</h3>
+      <p>Diretoria recebe resumo das vendas todo dia às 8h no Telegram.</p>
+      <div class="example">"Quanto vendemos ontem? Me envia todo dia às 8h"</div>
+    </div>
+    <div class="use-case">
+      <h3>3. Alerta de faturamento</h3>
+      <p>Time financeiro é notificado no Slack quando faturamento ultrapassar R$ 100k.</p>
+      <div class="example">"Avise no Slack quando faturamento > 100.000"</div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Mais casos -->
+  <div class="slide" data-slide="6">
+    <h2>Mais casos de uso</h2>
+    <div class="use-case">
+      <h3>4. Consulta via WhatsApp</h3>
+      <p>Vendedor em campo pergunta estoque pelo WhatsApp e recebe resposta em segundos.</p>
+      <div class="example">"Qual o estoque do Produto Y?" → Resposta via WhatsApp</div>
+    </div>
+    <div class="use-case">
+      <h3>5. Alerta de metas</h3>
+      <p>Marketing é notificado quando banco atingir 1.000 clientes cadastrados.</p>
+      <div class="example">"Avise quando tivermos mais de 1.000 clientes"</div>
+    </div>
+    <div class="use-case">
+      <h3>6. Agendamento flexível</h3>
+      <p>Alertas rodam a cada X minutos, horas, dias — ou em horários específicos via cron.</p>
+      <div class="example">Todo dia às 08:00 · Toda segunda · A cada 30 min</div>
+    </div>
+  </div>
+
+  <!-- Slide 7: Stack -->
+  <div class="slide" data-slide="7">
+    <h2>Tecnologias</h2>
+    <p style="margin-bottom:8px; max-width:60ch">Escolhidas por confiabilidade, performance e ecossistema.</p>
+    <div class="pills">
+      <div class="pill"><strong>Python + FastAPI</strong><span>Backend rápido, async</span></div>
+      <div class="pill"><strong>Docker</strong><span>Deploy consistente</span></div>
+      <div class="pill"><strong>PostgreSQL</strong><span>Dados operacionais</span></div>
+      <div class="pill"><strong>Redis</strong><span>Cache e rate limiting</span></div>
+      <div class="pill"><strong>LiteLLM</strong><span>Interface unificada de IA</span></div>
+      <div class="pill"><strong>9router</strong><span>Provedor LLM local</span></div>
+      <div class="pill"><strong>Telegram Bot API</strong><span>Integração gratuita</span></div>
+      <div class="pill"><strong>Evolution API</strong><span>WhatsApp self-hosted</span></div>
+      <div class="pill"><strong>APScheduler</strong><span>Agendamento de tarefas</span></div>
+      <div class="pill"><strong>SQLAlchemy</strong><span>ORM e persistência</span></div>
+      <div class="pill"><strong>Loki + Promtail</strong><span>Logging centralizado</span></div>
+      <div class="pill"><strong>JWT</strong><span>Autenticação segura</span></div>
+    </div>
+  </div>
+
+  <!-- Slide 8: Por que essas escolhas -->
+  <div class="slide" data-slide="8">
+    <h2>Por que essas escolhas?</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Python + FastAPI</h3>
+        <p>Performance assíncrona, documentação automática, ecossistema rico de bibliotecas de dados.</p>
+      </div>
+      <div class="card">
+        <h3>Docker</h3>
+        <p>Um comando para subir tudo. Funciona igual em qualquer máquina.</p>
+      </div>
+      <div class="card">
+        <h3>LiteLLM + 9router</h3>
+        <p>Interface única para qualquer provedor de IA. Sem lock-in. Troque o modelo sem mudar código.</p>
+      </div>
+      <div class="card">
+        <h3>Redis</h3>
+        <p>Cache ultrarrápido + rate limiting com sliding window. Essencial para APIs.</p>
+      </div>
+      <div class="card">
+        <h3>Telegram + WhatsApp</h3>
+        <p>Os dois canais mais usados no Brasil. Bot do Telegram gratuito. WhatsApp via Evolution API self-hosted.</p>
+      </div>
+      <div class="card">
+        <h3>Loki + Promtail</h3>
+        <p>Logging estruturado JSON com correlation IDs. Integrado ao Grafana para dashboards.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 9: Funcionalidades -->
+  <div class="slide" data-slide="9">
+    <h2>Funcionalidades</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>Intent Engine</h3>
+        <p>Regex para respostas rápidas, LLM como fallback para perguntas complexas.</p>
+      </div>
+      <div class="card">
+        <h3>Frontend SPA</h3>
+        <p>Painel web inspirado no Linear. Dark theme, i18n PT/EN.</p>
+      </div>
+      <div class="card">
+        <h3>JWT Auth</h3>
+        <p>Autenticação completa com tokens. Credenciais configuráveis.</p>
+      </div>
+      <div class="card">
+        <h3>Rate Limiting</h3>
+        <p>Sliding window via Redis. 3 tiers: geral, LLM e auth.</p>
+      </div>
+      <div class="card">
+        <h3>Structured Logs</h3>
+        <p>JSON com correlation IDs. Pronto para Loki/Grafana.</p>
+      </div>
+      <div class="card">
+        <h3>Alertas com Cron</h3>
+        <p>Intervalo ou agendamento. Minutos, horas, dias — ou expressão cron.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 10: Encerramento -->
+  <div class="slide slide-center" data-slide="10">
+    <h1 class="gradient" style="font-size: clamp(32px, 7vw, 52px)">Pronto para usar</h1>
+    <p style="margin-top:16px; font-size: clamp(16px, 3vw, 20px); max-width: 60ch;">
+      Um comando para subir. Uma interface para gerenciar.<br>
+      Alertas automáticos nos canais que sua equipe já usa.
+    </p>
+    <div class="cmd-box">docker compose up -d</div>
+    <p style="margin-top:32px;font-size:clamp(13px, 2.5vw, 16px);color:var(--text-dim)">Data Hub v0.1.0 — Python · FastAPI · Docker · IA</p>
+  </div>
+
+  <!-- Navigation -->
+  <div class="hint" aria-hidden="true">← → ou deslize para navegar</div>
+  <div class="nav" role="navigation" aria-label="Navegação dos slides">
+    <button onclick="prev()" aria-label="Slide anterior">←</button>
+    <span class="counter" id="counter" aria-live="polite">1 / 10</span>
+    <button onclick="next()" aria-label="Próximo slide">→</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+    let current = 0;
+
+    function show(n) {
+      slides[current].classList.remove('active');
+      current = (n + total) % total;
+      slides[current].classList.add('active');
+      document.getElementById('counter').textContent = `${current + 1} / ${total}`;
+      document.getElementById('progress').style.width = `${((current + 1) / total) * 100}%`;
+    }
+
+    function next() { show(current + 1); }
+    function prev() { show(current - 1); }
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+      if (e.key === 'Home') { e.preventDefault(); show(0); }
+      if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+    });
+
+    // Touch swipe
+    let touchX = 0;
+    document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const diff = touchX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+    }, { passive: true });
+
+    // Initialize
+    show(0);
+  </script>
+</body>
+</html>

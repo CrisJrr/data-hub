@@ -22,25 +22,50 @@ class PostgresAdapter(BaseAdapter):
 
     async def execute(self, sql: str, params: dict = None) -> QueryResult:
         async with self.pool.acquire() as conn:
-            stmt = await conn.prepare(sql)
-            records = await stmt.fetch()
+            if params:
+                records = await conn.fetch(sql, *params.values())
+            else:
+                records = await conn.fetch(sql)
             if not records:
                 return QueryResult(columns=[], rows=[], row_count=0)
             columns = list(records[0].keys())
             rows = [dict(r) for r in records]
             return QueryResult(columns=columns, rows=rows, row_count=len(rows))
 
-    async def list_tables(self) -> list[str]:
+    async def list_schemas(self) -> list[str]:
+        """Lista schemas que não são de sistema."""
         result = await self.execute(
-            "SELECT table_name FROM information_schema.tables "
-            "WHERE table_schema = 'public'"
+            "SELECT schema_name FROM information_schema.schemata "
+            "WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast') "
+            "ORDER BY schema_name"
         )
-        return [r["table_name"] for r in result.rows]
+        return [r["schema_name"] for r in result.rows]
 
-    async def describe_table(self, table: str) -> list[dict]:
+    async def list_tables(self, schema: str = None) -> list[dict]:
+        """Lista tabelas de todos os schemas (ou de um específico).
+        Retorna lista de dicts: {"schema": "...", "table": "..."}"""
+        if schema:
+            result = await self.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_schema = $1 AND table_type = 'BASE TABLE' "
+                "ORDER BY table_schema, table_name",
+                params={"schema": schema},
+            )
+        else:
+            result = await self.execute(
+                "SELECT table_schema, table_name FROM information_schema.tables "
+                "WHERE table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast') "
+                "AND table_type = 'BASE TABLE' "
+                "ORDER BY table_schema, table_name"
+            )
+        return [{"schema": r["table_schema"], "table": r["table_name"]} for r in result.rows]
+
+    async def describe_table(self, table: str, schema: str = "public") -> list[dict]:
         result = await self.execute(
             "SELECT column_name, data_type, is_nullable "
             "FROM information_schema.columns "
-            "WHERE table_name = $1 ORDER BY ordinal_position",
+            "WHERE table_name = $1 AND table_schema = $2 "
+            "ORDER BY ordinal_position",
+            params={"table": table, "schema": schema},
         )
         return result.rows

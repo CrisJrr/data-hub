@@ -66,3 +66,54 @@ class MessageLog(Base):
     result = Column(Text, default="")
     latency_ms = Column(Float, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class User(Base):
+    """Usuários do sistema (autenticação JWT)."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    email = Column(String(200), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class SchemaConfig(Base):
+    """Configuração de schemas/connections pra IA."""
+    __tablename__ = "schema_configs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    connection_name = Column(String(100), nullable=False)  # nome da conexão
+    schema_name = Column(String(200), nullable=False)       # nome do schema
+    table_name = Column(String(200), nullable=True)         # nome da tabela (null = schema level)
+    description = Column(Text, default="")                  # descrição
+    is_active = Column(Boolean, default=True)               # usar na IA
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AppSetting(Base):
+    """Configurações globais do app (ex: contexto de negócio)."""
+    __tablename__ = "app_settings"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, default="")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class LLMProvider(Base):
+    """Provedores de IA configuráveis pelo usuário."""
+    __tablename__ = "llm_providers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)           # ex: "Meu Gemini"
+    provider = Column(String(50), nullable=False)        # gemini, openai, anthropic, ollama, custom
+    model = Column(String(100), nullable=False)          # ex: "gemini-2.0-flash"
+    api_key = Column(String(500), default="")            # chave da API
+    api_base = Column(String(500), default="")           # URL customizada (opcional)
+    max_tokens = Column(Integer, default=4000)
+    temperature = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    is_default = Column(Boolean, default=False)          # provider padrão
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

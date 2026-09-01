@@ -32,15 +32,18 @@ class MySQLAdapter(BaseAdapter):
                 rows = [dict(r) for r in records]
                 return QueryResult(columns=columns, rows=rows, row_count=len(rows))
 
-    async def list_tables(self) -> list[str]:
+    async def list_tables(self, schema: str = None) -> list[dict]:
         result = await self.execute(
-            "SHOW TABLES"
+            f"SHOW TABLES" if not schema else f"SHOW TABLES FROM `{schema}`"
         )
         if result.rows:
             key = list(result.rows[0].keys())[0]
-            return [r[key] for r in result.rows]
+            tables = [r[key] for r in result.rows]
+            s = schema or "main"
+            return [{"schema": s, "table": t} for t in tables]
         return []
 
-    async def describe_table(self, table: str) -> list[dict]:
-        result = await self.execute(f"DESCRIBE `{table}`")
+    async def describe_table(self, table: str, schema: str = "main") -> list[dict]:
+        prefix = f"`{schema}`." if schema and schema != "main" else ""
+        result = await self.execute(f"DESCRIBE {prefix}`{table}`")
         return [{"column_name": r.get("Field", ""), "data_type": r.get("Type", "")} for r in result.rows]

@@ -1,4 +1,4 @@
-"""Canal WhatsApp via Evolution API."""
+"""Canal WhatsApp via Evolution API v2."""
 import httpx
 from src.channels.base import BaseChannel, Message
 
@@ -11,11 +11,15 @@ class WhatsAppChannel(BaseChannel):
         self.api_key = config["api_key"]
         self.instance = config.get("instance", "hub")
 
+    @property
+    def _headers(self):
+        return {"apikey": self.api_key, "Content-Type": "application/json"}
+
     async def send(self, message: Message) -> bool:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 f"{self.base_url}/message/sendText/{self.instance}",
-                headers={"apikey": self.api_key},
+                headers=self._headers,
                 json={
                     "number": message.recipient,
                     "text": message.content,
@@ -24,24 +28,28 @@ class WhatsAppChannel(BaseChannel):
             return resp.status_code in (200, 201)
 
     async def receive(self) -> list[Message]:
+        """Fetch recent chats (POST in v2.3.7)."""
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
+            resp = await client.post(
                 f"{self.base_url}/chat/findChats/{self.instance}",
-                headers={"apikey": self.api_key},
+                headers=self._headers,
+                json={"limit": 50, "offset": 0},
             )
             if resp.status_code != 200:
                 return []
             data = resp.json()
-            if not isinstance(data, list):
-                data = data.get("data", [])
+            # v2 returns {"chats": [...], "total": N}
+            chats = data.get("chats", data) if isinstance(data, dict) else data
+            if not isinstance(chats, list):
+                return []
             return [
                 Message(
                     recipient=c.get("remoteJid", ""),
-                    content=c.get("lastMessage", {}).get("message", ""),
+                    content=c.get("name", ""),  # v2 doesn't include lastMessage
                     sender=c.get("remoteJid", ""),
                     channel="whatsapp",
                 )
-                for c in data if c.get("lastMessage")
+                for c in chats
             ]
 
     async def health_check(self) -> bool:
@@ -49,7 +57,7 @@ class WhatsAppChannel(BaseChannel):
             async with httpx.AsyncClient() as client:
                 resp = await client.get(
                     f"{self.base_url}/instance/fetchInstances",
-                    headers={"apikey": self.api_key},
+                    headers=self._headers,
                 )
                 return resp.status_code == 200
         except Exception:

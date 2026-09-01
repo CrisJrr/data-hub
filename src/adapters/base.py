@@ -46,8 +46,13 @@ class BaseAdapter(ABC):
         ...
 
     @abstractmethod
-    async def list_tables(self) -> list[str]:
-        """Lista tabelas/coleções disponíveis."""
+    async def list_tables(self, schema: str = None) -> list[dict]:
+        """Lista tabelas. Retorna lista de dicts: {schema, table}"""
+        ...
+
+    @abstractmethod
+    async def describe_table(self, table: str, schema: str = "public") -> list[dict]:
+        """Retorna colunas e tipos da tabela."""
         ...
 
     @abstractmethod

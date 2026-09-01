@@ -21,12 +21,12 @@ class SQLiteAdapter(BaseAdapter):
             rows = [dict(zip(columns, row)) for row in records]
             return QueryResult(columns=columns, rows=rows, row_count=len(rows))
 
-    async def list_tables(self) -> list[str]:
+    async def list_tables(self, schema: str = None) -> list[dict]:
         result = await self.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
         )
-        return [r["name"] for r in result.rows]
+        return [{"schema": "main", "table": r["name"]} for r in result.rows]
 
-    async def describe_table(self, table: str) -> list[dict]:
+    async def describe_table(self, table: str, schema: str = "main") -> list[dict]:
         result = await self.execute(f"PRAGMA table_info('{table}')")
         return [{"column_name": r["name"], "data_type": r["type"]} for r in result.rows]
