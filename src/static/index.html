@@ -30,6 +30,20 @@ a:hover{text-decoration:underline}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2)}
 
+/* Selects - dark theme */
+select{
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:8px 32px 8px 12px;border-radius:var(--radius-sm);
+  font-family:var(--font);font-size:13px;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a8f98'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  cursor:pointer;transition:border-color .15s;
+}
+select:hover{border-color:rgba(255,255,255,.15)}
+select:focus{outline:none;border-color:var(--accent)}
+select option{background:var(--card);color:var(--text);padding:8px}
+
 /* Layout */
 .app{display:flex;height:100vh}
 .sidebar{width:240px;background:var(--sidebar);border-right:1px solid var(--border);
@@ -591,7 +605,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div>
                 <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Provedor</label>
-                <select id="provider-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                <select id="provider-type" style="width:100%">
                   <option value="openai">OpenAI</option>
                   <option value="anthropic">Anthropic (Claude)</option>
                   <option value="gemini">Google Gemini</option>
@@ -623,7 +637,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
               </div>
               <div>
                 <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Padrão</label>
-                <select id="provider-default" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                <select id="provider-default" style="width:100%">
                   <option value="false">Não</option>
                   <option value="true">Sim</option>
                 </select>
@@ -656,14 +670,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div style="display:flex;gap:24px;align-items:center">
           <div>
             <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Modo</label>
-            <select id="whatsapp-mode" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px" onchange="saveWhatsappMode()">
+            <select id="whatsapp-mode" onchange="saveWhatsappMode()">
               <option value="whitelist">Whitelist (só envia pra lista)</option>
               <option value="blocklist">Blocklist (envia pra todos, exceto lista)</option>
             </select>
           </div>
           <div>
             <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Política padrão (não listados)</label>
-            <select id="whatsapp-policy" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px" onchange="saveWhatsappMode()">
+            <select id="whatsapp-policy" onchange="saveWhatsappMode()">
               <option value="allow">Permitir</option>
               <option value="deny">Bloquear</option>
             </select>
@@ -702,16 +716,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div>
                 <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Tipo</label>
-                <select id="recipient-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                <select id="recipient-type" style="width:100%">
                   <option value="individual">Individual</option>
                   <option value="group">Grupo</option>
-                </select>
-              </div>
-              <div>
-                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Lista</label>
-                <select id="recipient-list" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
-                  <option value="whitelist">Whitelist</option>
-                  <option value="blocklist">Blocklist</option>
                 </select>
               </div>
             </div>
@@ -2819,7 +2826,7 @@ async function saveRecipient() {
   let number = document.getElementById('recipient-number').value.trim();
   const name = document.getElementById('recipient-name').value.trim();
   const recipient_type = document.getElementById('recipient-type').value;
-  const list_type = document.getElementById('recipient-list').value;
+  const list_type = document.getElementById('whatsapp-mode').value; // usa o modo global
 
   if (!number) { toast('Número é obrigatório'); return; }
   
