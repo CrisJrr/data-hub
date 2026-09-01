@@ -865,7 +865,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="ch-extra-fields"></div>
     <div class="modal-actions">
       <button class="btn" onclick="hideModal('channel-modal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="createChannel()">Criar</button>
+      <button class="btn btn-primary" id="channel-modal-btn" onclick="createChannel()">Criar</button>
     </div>
   </div>
 </div>
@@ -1894,6 +1894,7 @@ async function createChannel() {
   document.getElementById('ch-token').value = '';
   document.getElementById('channel-modal').dataset.editId = '';
   document.getElementById('channel-modal-title').textContent = 'Novo Canal';
+  document.getElementById('channel-modal-btn').textContent = 'Criar';
   loadChannels();
 }
 
@@ -1933,6 +1934,7 @@ async function editChannel(id) {
   // Armazena ID para edição
   document.getElementById('channel-modal').dataset.editId = id;
   document.getElementById('channel-modal-title').textContent = 'Editar Canal';
+  document.getElementById('channel-modal-btn').textContent = 'Salvar';
   showModal('channel-modal');
 }
 

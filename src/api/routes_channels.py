@@ -99,7 +99,7 @@ async def update_channel(channel_id: int, payload: ChannelUpdate, db: AsyncSessi
 
     # Update hub registry
     from src.core.hub import hub
-    hub.channels.register(ch.name, ch.channel_type, ch.config, ch.is_active)
+    hub.channels.register(ch.name, ch.config)
 
     return _ch_to_dict(ch)
 
