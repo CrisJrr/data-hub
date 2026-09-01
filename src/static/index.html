@@ -1744,6 +1744,9 @@ async function loadChannels() {
     if (c.channel_type === 'whatsapp') {
       actions += `<button class="btn btn-sm" onclick="editChannel(${c.id})">✎ Editar</button>`;
     }
+    if (isTelegram) {
+      actions += `<button class="btn btn-sm" onclick="editChannel(${c.id})">✎ Editar</button>`;
+    }
     actions += `<button class="btn btn-sm btn-danger" onclick="deleteChannel(${c.id})">✕ ${t('btn_delete')}</button>`;
     
     return `
@@ -1924,7 +1927,7 @@ async function editChannel(id) {
   document.getElementById('ch-type').value = ch.channel_type;
   updateChannelFields();
 
-  // Preenche campos específicos do WhatsApp
+  // Preenche campos específicos por tipo
   if (ch.channel_type === 'whatsapp') {
     const cfg = ch.config || {};
     document.getElementById('ch-token').value = cfg.api_url || '';
@@ -1934,6 +1937,9 @@ async function editChannel(id) {
       const instanceInput = document.getElementById('ch-instance');
       if (instanceInput) instanceInput.value = cfg.instance || '';
     }, 100);
+  } else if (ch.channel_type === 'telegram-bot') {
+    const cfg = ch.config || {};
+    document.getElementById('ch-token').value = cfg.token || '';
   }
 
   // Armazena ID para edição
