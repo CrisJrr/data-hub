@@ -1741,12 +1741,8 @@ async function loadChannels() {
         actions = `<button class="btn btn-sm" onclick="startTelegram()">▶ ${t('btn_start')}</button>`;
       }
     }
-    if (c.channel_type === 'whatsapp') {
-      actions += `<button class="btn btn-sm" onclick="editChannel(${c.id})">✎ Editar</button>`;
-    }
-    if (isTelegram) {
-      actions += `<button class="btn btn-sm" onclick="editChannel(${c.id})">✎ Editar</button>`;
-    }
+    // Botão editar para todos os canais
+    actions += `<button class="btn btn-sm" onclick="editChannel(${c.id})">✎ Editar</button>`;
     actions += `<button class="btn btn-sm btn-danger" onclick="deleteChannel(${c.id})">✕ ${t('btn_delete')}</button>`;
     
     return `
@@ -1940,6 +1936,35 @@ async function editChannel(id) {
   } else if (ch.channel_type === 'telegram-bot') {
     const cfg = ch.config || {};
     document.getElementById('ch-token').value = cfg.token || '';
+  } else if (ch.channel_type === 'slack') {
+    const cfg = ch.config || {};
+    document.getElementById('ch-token').value = '';
+    setTimeout(() => {
+      const botToken = document.getElementById('ch-slack-bot-token');
+      if (botToken) botToken.value = cfg.bot_token || '';
+      const appToken = document.getElementById('ch-slack-app-token');
+      if (appToken) appToken.value = cfg.app_token || '';
+    }, 100);
+  } else if (ch.channel_type === 'google_chat') {
+    const cfg = ch.config || {};
+    document.getElementById('ch-token').value = '';
+    setTimeout(() => {
+      const sa = document.getElementById('ch-google-sa');
+      if (sa) sa.value = cfg.service_account_json || '';
+      const proj = document.getElementById('ch-google-project');
+      if (proj) proj.value = cfg.project_id || '';
+    }, 100);
+  } else if (ch.channel_type === 'teams') {
+    const cfg = ch.config || {};
+    document.getElementById('ch-token').value = '';
+    setTimeout(() => {
+      const tenant = document.getElementById('ch-teams-tenant');
+      if (tenant) tenant.value = cfg.tenant_id || '';
+      const clientId = document.getElementById('ch-teams-client');
+      if (clientId) clientId.value = cfg.client_id || '';
+      const secret = document.getElementById('ch-teams-secret');
+      if (secret) secret.value = cfg.client_secret || '';
+    }, 100);
   }
 
   // Armazena ID para edição
