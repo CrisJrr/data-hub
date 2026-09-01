@@ -16,6 +16,12 @@ class ChannelCreate(BaseModel):
     config: dict
 
 
+class ChannelUpdate(BaseModel):
+    name: str | None = None
+    config: dict | None = None
+    is_active: bool | None = None
+
+
 class ChannelResponse(BaseModel):
     id: int
     name: str
@@ -72,6 +78,29 @@ async def get_channel(channel_id: int, db: AsyncSession = Depends(get_db), user=
     ch = await db.get(Channel, channel_id)
     if not ch:
         raise HTTPException(404, "Canal não encontrado")
+    return _ch_to_dict(ch)
+
+
+@router.put("/{channel_id}")
+async def update_channel(channel_id: int, payload: ChannelUpdate, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    """Atualiza um canal."""
+    ch = await db.get(Channel, channel_id)
+    if not ch:
+        raise HTTPException(404, "Canal não encontrado")
+
+    if payload.name is not None:
+        ch.name = payload.name
+    if payload.config is not None:
+        ch.config = payload.config
+    if payload.is_active is not None:
+        ch.is_active = payload.is_active
+
+    await db.commit()
+
+    # Update hub registry
+    from src.core.hub import hub
+    hub.channels.register(ch.name, ch.channel_type, ch.config, ch.is_active)
+
     return _ch_to_dict(ch)
 
 
