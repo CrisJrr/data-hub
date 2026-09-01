@@ -767,6 +767,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <option value="mysql">MySQL</option>
         <option value="sqlite">SQLite</option>
         <option value="mongodb">MongoDB</option>
+        <option value="bigquery">Google BigQuery</option>
         <option value="api_rest">REST API</option>
       </select>
     </div>
@@ -796,6 +797,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <option value="mysql">MySQL</option>
         <option value="sqlite">SQLite</option>
         <option value="mongodb">MongoDB</option>
+        <option value="bigquery">Google BigQuery</option>
         <option value="api_rest">REST API</option>
       </select>
     </div>
@@ -1338,6 +1340,11 @@ const connConfigs = {
   ],
   mongodb: [
     { key: 'uri', label: 'URI', placeholder: 'mongodb://localhost:27017/mydb' }
+  ],
+  bigquery: [
+    { key: 'project_id', label: 'Project ID', placeholder: 'meu-projeto-123' },
+    { key: 'dataset', label: 'Dataset padrão', placeholder: 'meu_dataset' },
+    { key: 'credentials_json', label: 'Service Account JSON', placeholder: '{"type":"service_account",...}' }
   ],
   api_rest: [
     { key: 'base_url', label: 'Base URL', placeholder: 'https://api.example.com' }

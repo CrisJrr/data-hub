@@ -20,6 +20,7 @@ dependencies = [
     "python-telegram-bot>=21.0",
     "slack-bolt>=1.18",
     "google-auth>=2.0",
+    "google-cloud-bigquery>=3.25",
     "msal>=1.28",
     "typer>=0.12",
     "rich>=13.0",
