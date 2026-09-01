@@ -339,6 +339,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" data-page="config">
         <span class="nav-icon">⚙</span> <span>Config</span>
       </div>
+      <div class="nav-item" data-page="whatsapp">
+        <span class="nav-icon">◉</span> <span>WhatsApp</span>
+      </div>
     </nav>
     <div class="sidebar-footer">
       <span onclick="openSettings()">⚙</span>
@@ -630,6 +633,92 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
             <button class="btn" onclick="hideProviderModal()">Cancelar</button>
             <button class="btn btn-primary" onclick="saveProvider()">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp Page -->
+    <div class="page" id="page-whatsapp">
+      <div class="page-header">
+        <div>
+          <div class="page-title">WhatsApp — Controle de Destinatários</div>
+          <div class="page-subtitle">Whitelist/Blocklist para envio de mensagens</div>
+        </div>
+      </div>
+
+      <!-- Mode Config -->
+      <div class="card" style="margin: 16px 0; padding: 20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:18px;color:var(--accent)">◉</span>
+          <strong>Modo de Operação</strong>
+        </div>
+        <div style="display:flex;gap:24px;align-items:center">
+          <div>
+            <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Modo</label>
+            <select id="whatsapp-mode" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px" onchange="saveWhatsappMode()">
+              <option value="whitelist">Whitelist (só envia pra lista)</option>
+              <option value="blocklist">Blocklist (envia pra todos, exceto lista)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Política padrão (não listados)</label>
+            <select id="whatsapp-policy" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px" onchange="saveWhatsappMode()">
+              <option value="allow">Permitir</option>
+              <option value="deny">Bloquear</option>
+            </select>
+          </div>
+          <div style="flex:1"></div>
+          <div style="text-align:right">
+            <button class="btn btn-primary" onclick="showAddRecipient()">+ Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recipients List -->
+      <div class="card" style="margin: 16px 0; padding: 20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span style="font-size:18px;color:var(--accent)">◈</span>
+          <strong>Destinatários</strong>
+          <span id="recipient-count" style="color:var(--text-dim);font-size:13px;margin-left:8px"></span>
+        </div>
+        <div id="recipients-list"></div>
+      </div>
+
+      <!-- Add/Edit Recipient Modal -->
+      <div id="recipient-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+        <div class="card" style="width:520px;max-height:90vh;overflow-y:auto;padding:24px">
+          <h3 id="recipient-modal-title" style="margin:0 0 16px">Adicionar Destinatário</h3>
+          <input type="hidden" id="recipient-id">
+          <div style="display:grid;gap:12px">
+            <div>
+              <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Número ou JID</label>
+              <input id="recipient-number" placeholder="5519999262383@s.whatsapp.net ou 5519999262383" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Nome</label>
+              <input id="recipient-name" placeholder="Ex: João da Silva" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Tipo</label>
+                <select id="recipient-type" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                  <option value="individual">Individual</option>
+                  <option value="group">Grupo</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:4px">Lista</label>
+                <select id="recipient-list" style="width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+                  <option value="whitelist">Whitelist</option>
+                  <option value="blocklist">Blocklist</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+            <button class="btn" onclick="hideRecipientModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveRecipient()">Salvar</button>
           </div>
         </div>
       </div>
@@ -1103,6 +1192,7 @@ function navigate(page) {
   else if (page === 'channels') loadChannels();
   else if (page === 'schemas') { loadSchemasConfig(); loadBusinessContext(); }
   else if (page === 'config') loadProviders();
+  else if (page === 'whatsapp') { loadRecipientsConfig(); loadRecipients(); }
   else if (page === 'alerts') loadAlerts();
   else if (page === 'activity') loadActivity();
 }
@@ -2609,6 +2699,165 @@ function handleWsEvent(msg) {
       loadActivity();
     }
   }
+}
+
+// ─── WhatsApp Recipients ───
+async function loadRecipientsConfig() {
+  const config = await api('/whatsapp-recipients/config');
+  document.getElementById('whatsapp-mode').value = config.mode;
+  document.getElementById('whatsapp-policy').value = config.default_policy;
+}
+
+async function saveWhatsappMode() {
+  const mode = document.getElementById('whatsapp-mode').value;
+  const policy = document.getElementById('whatsapp-policy').value;
+  await api('/whatsapp-recipients/config', {
+    method: 'PUT',
+    body: JSON.stringify({ mode, default_policy: policy })
+  });
+  toast('Modo atualizado');
+}
+
+async function loadRecipients() {
+  const recipients = await api('/whatsapp-recipients/');
+  const el = document.getElementById('recipients-list');
+  const countEl = document.getElementById('recipient-count');
+  
+  if (recipients.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:32px"><div class="empty-text">Nenhum destinatário configurado</div></div>';
+    countEl.textContent = '';
+    return;
+  }
+
+  countEl.textContent = `(${recipients.length})`;
+  
+  const whitelist = recipients.filter(r => r.list_type === 'whitelist');
+  const blocklist = recipients.filter(r => r.list_type === 'blocklist');
+
+  let html = '';
+  
+  if (whitelist.length > 0) {
+    html += `<div style="margin-bottom:16px"><strong style="color:var(--success)">Whitelist</strong></div>`;
+    for (const r of whitelist) {
+      const icon = r.recipient_type === 'group' ? '◉' : '◎';
+      const statusDot = r.is_active ? 'dot-green' : 'dot-red';
+      html += `
+        <div class="table-row" style="opacity:${r.is_active ? 1 : 0.5}">
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <span class="dot ${statusDot}"></span>
+            <span style="font-size:14px">${icon}</span>
+            <div>
+              <div style="font-weight:500">${r.name || r.number}</div>
+              <div style="font-size:12px;color:var(--text-dim)">${r.number}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm" onclick="toggleRecipient(${r.id}, ${!r.is_active})">${r.is_active ? 'Desativar' : 'Ativar'}</button>
+            <button class="btn btn-sm" onclick="editRecipient(${r.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteRecipient(${r.id})">✕</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  if (blocklist.length > 0) {
+    html += `<div style="margin-bottom:16px;margin-top:${whitelist.length > 0 ? '16px' : '0'}"><strong style="color:var(--danger)">Blocklist</strong></div>`;
+    for (const r of blocklist) {
+      const icon = r.recipient_type === 'group' ? '◉' : '◎';
+      const statusDot = r.is_active ? 'dot-red' : 'dot-green';
+      html += `
+        <div class="table-row" style="opacity:${r.is_active ? 1 : 0.5}">
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <span class="dot ${statusDot}"></span>
+            <span style="font-size:14px">${icon}</span>
+            <div>
+              <div style="font-weight:500">${r.name || r.number}</div>
+              <div style="font-size:12px;color:var(--text-dim)">${r.number}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm" onclick="toggleRecipient(${r.id}, ${!r.is_active})">${r.is_active ? 'Desativar' : 'Ativar'}</button>
+            <button class="btn btn-sm" onclick="editRecipient(${r.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteRecipient(${r.id})">✕</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  el.innerHTML = html;
+}
+
+function showAddRecipient() {
+  document.getElementById('recipient-modal-title').textContent = 'Adicionar Destinatário';
+  document.getElementById('recipient-id').value = '';
+  document.getElementById('recipient-number').value = '';
+  document.getElementById('recipient-name').value = '';
+  document.getElementById('recipient-type').value = 'individual';
+  document.getElementById('recipient-list').value = 'whitelist';
+  document.getElementById('recipient-modal').style.display = 'flex';
+}
+
+async function editRecipient(id) {
+  const recipients = await api('/whatsapp-recipients/');
+  const r = recipients.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('recipient-modal-title').textContent = 'Editar Destinatário';
+  document.getElementById('recipient-id').value = r.id;
+  document.getElementById('recipient-number').value = r.number;
+  document.getElementById('recipient-name').value = r.name;
+  document.getElementById('recipient-type').value = r.recipient_type;
+  document.getElementById('recipient-list').value = r.list_type;
+  document.getElementById('recipient-modal').style.display = 'flex';
+}
+
+function hideRecipientModal() {
+  document.getElementById('recipient-modal').style.display = 'none';
+}
+
+async function saveRecipient() {
+  const id = document.getElementById('recipient-id').value;
+  let number = document.getElementById('recipient-number').value.trim();
+  const name = document.getElementById('recipient-name').value.trim();
+  const recipient_type = document.getElementById('recipient-type').value;
+  const list_type = document.getElementById('recipient-list').value;
+
+  if (!number) { toast('Número é obrigatório'); return; }
+  
+  // Auto-add @s.whatsapp.net if not present
+  if (!number.includes('@')) {
+    number = number + '@s.whatsapp.net';
+  }
+
+  if (id) {
+    await api(`/whatsapp-recipients/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, recipient_type, list_type })
+    });
+  } else {
+    await api('/whatsapp-recipients/', {
+      method: 'POST',
+      body: JSON.stringify({ number, name, recipient_type, list_type, is_active: true })
+    });
+  }
+  
+  hideRecipientModal();
+  loadRecipients();
+  toast(id ? 'Destinatário atualizado!' : 'Destinatário adicionado!');
+}
+
+async function deleteRecipient(id) {
+  if (!confirm('Remover este destinatário?')) return;
+  await api(`/whatsapp-recipients/${id}`, { method: 'DELETE' });
+  loadRecipients();
+  toast('Destinatário removido');
+}
+
+async function toggleRecipient(id, active) {
+  await api(`/whatsapp-recipients/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_active: active })
+  });
+  loadRecipients();
 }
 </script>
 </body>

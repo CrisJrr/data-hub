@@ -204,7 +204,7 @@ app.add_middleware(RequestLoggingMiddleware)
 
 
 # Registra todas as rotas
-from src.api import routes_connections, routes_channels, routes_rules, routes_messages, routes_query, routes_auth, routes_alerts, routes_schemas, routes_settings, routes_llm_providers
+from src.api import routes_connections, routes_channels, routes_rules, routes_messages, routes_query, routes_auth, routes_alerts, routes_schemas, routes_settings, routes_llm_providers, routes_whatsapp_recipients
 
 app.include_router(routes_auth.router)
 app.include_router(routes_connections.router)
@@ -216,6 +216,7 @@ app.include_router(routes_alerts.router)
 app.include_router(routes_schemas.router)
 app.include_router(routes_settings.router)
 app.include_router(routes_llm_providers.router)
+app.include_router(routes_whatsapp_recipients.router)
 
 
 # ── Evolution API Webhook Receiver ──────────────────────────────

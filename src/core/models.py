@@ -117,3 +117,16 @@ class LLMProvider(Base):
     is_active = Column(Boolean, default=True)
     is_default = Column(Boolean, default=False)          # provider padrão
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class WhatsAppRecipient(Base):
+    """Whitelist/blocklist de destinatários WhatsApp."""
+    __tablename__ = "whatsapp_recipients"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    number = Column(String(100), nullable=False)         # JID ou número
+    name = Column(String(200), default="")                # nome pra identificar
+    recipient_type = Column(String(20), default="individual")  # individual ou group
+    list_type = Column(String(20), default="whitelist")   # whitelist ou blocklist
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

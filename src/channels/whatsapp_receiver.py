@@ -9,17 +9,73 @@ This module provides:
   - Polling fallback using findChats for chat list monitoring
 """
 import asyncio
+import json
 import logging
 import httpx
 from src.channels.base import Message
 from src.core.hub import hub
 from src.api.routes_messages import format_answer
-from src.core.intent_engine import intent_engine
 
 logger = logging.getLogger(__name__)
 
 # Track last processed message timestamp to avoid duplicates
 _last_message_time: dict[str, str] = {}
+
+
+async def _is_recipient_allowed(msg_from: str) -> bool:
+    """Verifica se o destinatário pode receber mensagens.
+    
+    Modo whitelist: só envia pra números na lista (ou qualquer um se lista vazia)
+    Modo blocklist: envia pra todos EXCETO números na lista
+    """
+    from src.db import async_session
+    from sqlalchemy import text
+
+    try:
+        async with async_session() as session:
+            # Pegar modo atual
+            result = await session.execute(
+                text("SELECT value FROM app_settings WHERE key = 'whatsapp_mode'")
+            )
+            row = result.fetchone()
+            mode = row[0] if row else "blocklist"
+
+            # Pegar política padrão
+            result2 = await session.execute(
+                text("SELECT value FROM app_settings WHERE key = 'whatsapp_default_policy'")
+            )
+            row2 = result2.fetchone()
+            default_policy = row2[0] if row2 else "allow"
+
+            # Verificar se o número está na lista
+            result3 = await session.execute(
+                text("SELECT id, is_active FROM whatsapp_recipients WHERE number = :num"),
+                {"num": msg_from}
+            )
+            recipient = result3.fetchone()
+
+            if recipient is None:
+                # Número não está em nenhuma lista
+                if mode == "whitelist":
+                    # Whitelist: se não está na lista, não permite (a menos que lista esteja vazia)
+                    result4 = await session.execute(text("SELECT COUNT(*) FROM whatsapp_recipients WHERE list_type = 'whitelist' AND is_active = true"))
+                    count = result4.fetchone()[0]
+                    if count == 0:
+                        return True  # Lista vazia, permite tudo
+                    return default_policy == "allow"
+                else:
+                    # Blocklist: se não está na lista, permite
+                    return default_policy == "allow"
+            else:
+                # Número está na lista
+                is_active = recipient[1]
+                if mode == "whitelist":
+                    return is_active  # Whitelist: ativo = permite
+                else:
+                    return not is_active  # Blocklist: ativo = bloqueado
+    except Exception as e:
+        logger.error(f"Error checking recipient permission: {e}")
+        return False  # Em caso de erro, bloqueia por segurança
 
 
 async def _format_whatsapp_response(answer) -> str:
@@ -44,6 +100,10 @@ async def handle_webhook_event(event: dict):
     Called from the /whatsapp/webhook route when Evolution API pushes
     message events (upsert, update, etc.).
     """
+    import logging
+    _dlog = logging.getLogger("whatsapp.debug")
+    _dlog.info(f"DEBUG webhook event: {json.dumps(event)[:500]}")
+
     event_type = event.get("event", "")
     instance = event.get("instance", "")
     data = event.get("data", {})
@@ -73,34 +133,54 @@ async def handle_webhook_event(event: dict):
 
     logger.info(f"WhatsApp message from {msg_from}: {msg_text[:50]}...")
 
+    # Check if recipient is allowed
+    if not await _is_recipient_allowed(msg_from):
+        logger.info(f"WhatsApp message blocked for {msg_from} (not in whitelist)")
+        return
+
     # Process through intent engine
     try:
-        result = await intent_engine.process(msg_text)
+        from src.core.intent_engine import IntentEngine
+        rules_data = list(hub.rules.list_all().values())
+        engine = IntentEngine(rules=rules_data, llm_enabled=True)
+        result = await engine.process(msg_text)
         response = await _format_whatsapp_response(result)
 
         # Send response back
         api_url = "http://evolution:8080"
         api_key = ""
         try:
-            # Try to get config from channel registry
-            from src.channels.registry import channel_registry
-            wa_channel = channel_registry.get("whatsapp")
-            if wa_channel:
-                api_url = wa_channel.base_url
-                api_key = wa_channel.api_key
+            # Get config from hub channels registry
+            wa_config = hub.channels.get("whatsapp-evolution")
+            if wa_config:
+                cfg = wa_config.get("config", {})
+                api_url = cfg.get("api_url", api_url)
+                api_key = cfg.get("api_key", "")
         except Exception:
             pass
 
+        # Fallback to .env config
+        if not api_key:
+            from src.config import settings
+            api_url = settings.whatsapp_api_url or api_url
+            api_key = settings.whatsapp_api_key or ""
+
         if api_key:
-            async with httpx.AsyncClient() as send_client:
-                await send_client.post(
-                    f"{api_url}/message/sendText/{instance}",
-                    headers={"apikey": api_key, "Content-Type": "application/json"},
-                    json={
-                        "number": msg_from,
-                        "text": response,
-                    },
-                )
+            import logging
+            _slog = logging.getLogger("whatsapp.send")
+            try:
+                async with httpx.AsyncClient() as send_client:
+                    resp = await send_client.post(
+                        f"{api_url}/message/sendText/{instance}",
+                        headers={"apikey": api_key, "Content-Type": "application/json"},
+                        json={
+                            "number": msg_from,
+                            "text": response,
+                        },
+                    )
+                    _slog.info(f"Evolution API response: status={resp.status_code} body={resp.text[:200]}")
+            except Exception as e:
+                _slog.error(f"Failed to send WhatsApp response: {e}")
             logger.info(f"WhatsApp response sent to {msg_from}")
 
     except Exception as e:
