@@ -1696,6 +1696,9 @@ async function loadChannels() {
   let tgStatus = { polling: false };
   try { tgStatus = await api('/telegram/status'); } catch {}
 
+  let waStatus = { connected: false };
+  try { waStatus = await api('/whatsapp/status'); } catch {}
+
   if (chs.length === 0) {
     list.innerHTML = '';
     empty.style.display = 'block';
@@ -1721,11 +1724,13 @@ async function loadChannels() {
     
     // Determine polling status per channel type
     const isTelegram = c.channel_type === 'telegram-bot';
+    const isWhatsApp = c.channel_type === 'whatsapp';
     const isPolling = isTelegram ? tgStatus.polling : false;
+    const isWaConnected = isWhatsApp ? waStatus.connected : false;
     
     // Status text and dot color
-    const statusText = isPolling ? t('status_active') : t('status_configured');
-    const dotClass = isPolling ? 'dot-green' : 'dot-muted';
+    const statusText = (isPolling || isWaConnected) ? t('status_active') : t('status_configured');
+    const dotClass = (isPolling || isWaConnected) ? 'dot-green' : 'dot-muted';
     
     // Buttons: show appropriate action based on state
     let actions = '';
