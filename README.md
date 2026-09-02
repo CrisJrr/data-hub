@@ -1,169 +1,201 @@
-# Data Hub
+# Data Hub — Multi-Database Hub with Intelligent Messaging
 
-Multi-database hub com motor de intenção híbrido (Regex + LLM) e mensageria via WhatsApp/Telegram.
+> Connect to multiple databases and operate bots across multiple messaging platforms with an intelligent intent engine (Regex + LLM).
 
-## O que é?
+## Features
 
-Um centro de controle que conecta a múltiplas bases de dados e responde perguntas em linguagem natural via WhatsApp ou Telegram. O motor de intenção tenta Regex primeiro (grátis) e usa LLM como fallback.
-
-## Arquitetura
-
-```
-Mensagem → Intent Engine → Regex (grátis) → executa query
-                     ↓ (fallback)
-                   LLM → gera SQL → executa query
-                     ↓
-               Resposta no chat
-```
+- **5 Database Adapters**: PostgreSQL, MySQL, SQLite, MongoDB, Google BigQuery
+- **5 Messaging Channels**: WhatsApp (Evolution API), Telegram, Slack, Microsoft Teams, Google Chat
+- **Hybrid Intent Engine**: Regex rules first → LLM fallback (configurable per rule)
+- **Multi-Provider LLM**: OpenAI, Anthropic, Gemini, Ollama, or custom API via LiteLLM
+- **Schema Intelligence**: AI receives table descriptions, column types, and date ranges
+- **Business Context**: Configure domain-specific rules for better AI understanding
+- **Configurable Providers**: Switch between AI models from the frontend
+- **Alert System**: Scheduled queries with notifications via messaging channels
+- **WhatsApp Whitelist/Blocklist**: Control which numbers/groups can receive messages
+- **Real-time Updates**: WebSocket for live dashboard updates
+- **Enterprise Observability**: Grafana + Loki + Promtail for monitoring
 
 ## Quick Start
 
-### 1. Com Docker (recomendado)
+### Prerequisites
+- Docker & Docker Compose
+- Python 3.11+ (for local development)
+
+### 1. Clone & Configure
 
 ```bash
-# Copie .env.example pra .env e configure
+git clone https://github.com/YOUR_USERNAME/data-hub.git
+cd data-hub
 cp .env.example .env
-
-# Suba tudo
-docker compose up -d
-
-# API rodando em http://localhost:8000
-# Docs em http://localhost:8000/docs
+# Edit .env with your credentials
 ```
 
-### 2. Local (desenvolvimento)
+### 2. Start Services
 
 ```bash
-# Instale dependências
+docker compose up -d
+```
+
+### 3. Access
+
+- **Frontend**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Grafana**: http://localhost:3000 (admin/datahub)
+
+Default credentials: `admin` / `admin123`
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Hub API                           │
+├─────────────────────────────────────────────────────────────┤
+│  Intent Engine (Regex + LLM)                                │
+│  ├── Regex Rules (free, instant)                            │
+│  └── LLM Fallback (LiteLLM multi-provider)                 │
+├─────────────────────────────────────────────────────────────┤
+│  Database Adapters          │  Messaging Channels           │
+│  ├── PostgreSQL             │  ├── WhatsApp (Evolution)     │
+│  ├── MySQL                  │  ├── Telegram Bot             │
+│  ├── SQLite                 │  ├── Slack                    │
+│  ├── MongoDB                │  ├── Microsoft Teams          │
+│  └── Google BigQuery        │  └── Google Chat              │
+├─────────────────────────────────────────────────────────────┤
+│  Alert Engine + Scheduler (cron/interval)                   │
+│  Rate Limiting (Redis sliding window)                       │
+│  Structured Logging (JSON + correlation IDs)                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Configuration
+
+### Environment Variables
+
+See `.env.example` for all available options.
+
+### Database Connections
+
+Add connections via the frontend or API:
+- PostgreSQL: `host`, `port`, `user`, `password`, `database`
+- MySQL: `host`, `port`, `user`, `password`, `database`
+- SQLite: `path`
+- MongoDB: `uri`
+- BigQuery: `project_id`, `dataset`, `credentials_json`
+
+### LLM Providers
+
+Configure AI providers from the frontend (Config tab):
+- OpenAI (GPT-4, GPT-4o)
+- Anthropic (Claude)
+- Google Gemini
+- Ollama (local models)
+- Custom API (any OpenAI-compatible endpoint)
+
+### Schema Documentation
+
+Document your schemas and tables in the Schemas tab:
+- Add descriptions to help AI understand your data
+- Toggle which schemas/tables the AI can access
+- Define business context for domain-specific queries
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/login` - Get JWT token
+- `POST /auth/register` - Create user
+
+### Connections
+- `GET /connections/` - List connections
+- `POST /connections/` - Create connection
+- `PUT /connections/{id}` - Update connection
+- `DELETE /connections/{id}` - Delete connection
+- `POST /connections/{id}/test` - Test connection
+
+### Channels
+- `GET /channels/` - List channels
+- `POST /channels/` - Create channel
+- `PUT /channels/{id}` - Update channel
+- `DELETE /channels/{id}` - Delete channel
+
+### Query
+- `POST /query/` - Execute SQL query
+- `GET /query/schema/{connection}` - Get schema
+
+### WhatsApp
+- `GET /whatsapp/status` - Connection status
+- `GET /whatsapp-recipients/` - List recipients
+- `POST /whatsapp-recipients/` - Add recipient
+- `PUT /whatsapp-recipients/{id}` - Update recipient
+- `DELETE /whatsapp-recipients/{id}` - Delete recipient
+- `GET /whatsapp-recipients/config` - Get whitelist/blocklist mode
+- `PUT /whatsapp-recipients/config` - Set mode
+
+### Schemas
+- `GET /schemas/` - List schema configs
+- `POST /schemas/sync` - Sync from databases
+- `PUT /schemas/{id}` - Update description
+- `DELETE /schemas/{id}` - Delete schema config
+
+### Settings
+- `GET /settings/business_context` - Get business context
+- `PUT /settings/business_context` - Set business context
+
+### LLM Providers
+- `GET /llm-providers/` - List providers
+- `POST /llm-providers/` - Create provider
+- `PUT /llm-providers/{id}` - Update provider
+- `DELETE /llm-providers/{id}` - Delete provider
+- `POST /llm-providers/{id}/set-default` - Set as default
+
+### Alerts
+- `GET /alerts/` - List alert rules
+- `POST /alerts/` - Create alert rule
+- `PUT /alerts/{id}` - Update alert
+- `DELETE /alerts/{id}` - Delete alert
+- `GET /alerts/history` - Alert history
+
+## Development
+
+### Local Setup
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+
+# Install dependencies
 pip install -e ".[dev]"
 
-# Configure
-cp .env.example .env
+# Run tests
+pytest
 
-# Inicie a API
+# Start API server
 uvicorn src.main:app --reload
-
-# Ou use o CLI
-python -m src.cli.hub_cli status
-python -m src.cli.hub_cli api
 ```
 
-## Uso
-
-### Registrar um banco de dados
-
-```bash
-curl -X POST http://localhost:8000/connections/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "minha_loja",
-    "db_type": "sqlite",
-    "config": {"path": "./data/loja.db"}
-  }'
-```
-
-### Criar uma regra Regex
-
-```bash
-curl -X POST http://localhost:8000/rules/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "vendas_diarias",
-    "pattern": "vendas? (de |do )?(hoje|ontem|ontem)",
-    "connection_name": "minha_loja",
-    "query_template": "SELECT * FROM vendas WHERE date = date(\"now\")",
-    "priority": 10
-  }'
-```
-
-### Fazer uma pergunta
-
-```bash
-curl -X POST http://localhost:8000/messages/ask \
-  -H "Content-Type: application/json" \
-  -d '{"message": "vendas de hoje"}'
-```
-
-### Consulta direta (SQL)
-
-```bash
-curl -X POST http://localhost:8000/query/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "connection": "minha_loja",
-    "query": "SELECT * FROM vendas LIMIT 10"
-  }'
-```
-
-## CLI
-
-```bash
-# Status geral
-hub status
-
-# Listar conexões
-hub connections
-
-# Listar regras
-hub rules
-
-# Fazer pergunta
-hub ask "vendas de hoje"
-
-# Enviar mensagem
-hub send telegram 123456 "Relatório do dia"
-```
-
-## Tipos de DB Suportados
-
-| Tipo | Adapter | Config Example |
-|------|---------|----------------|
-| PostgreSQL | asyncpg | `{"host": "localhost", "database": "mydb", "user": "u", "password": "p"}` |
-| MySQL | aiomysql | `{"host": "localhost", "database": "mydb", "user": "u", "password": "p"}` |
-| SQLite | aiosqlite | `{"path": "./data/my.db"}` |
-| MongoDB | motor | `{"uri": "mongodb://localhost", "database": "mydb"}` |
-| REST API | httpx | `{"base_url": "https://api.example.com", "endpoints": ["/vendas"]}` |
-
-## LLM Providers
-
-Configurável via `.env` usando LiteLLM:
-
-```env
-# OpenAI
-LLM_MODEL=gpt-4o-mini
-OPENAI_API_KEY=sk-xxx
-
-# Ollama (local, grátis)
-LLM_MODEL=ollama/llama3.1
-
-# Claude
-LLM_MODEL=claude-3-5-sonnet-20241022
-ANTHROPIC_API_KEY=sk-ant-xxx
-```
-
-## Docker Services
-
-```bash
-docker compose up -d           # Sobe api + worker + redis
-docker compose up -d evolution # Adiciona WhatsApp (Evolution API)
-docker compose logs -f api     # Logs da API
-docker compose down            # Para tudo
-```
-
-## Estrutura
+### Project Structure
 
 ```
 data-hub/
 ├── src/
-│   ├── core/           # Registry, Models, Intent Engine
-│   ├── adapters/       # Conectores de DB (pg, mysql, sqlite, mongo, api)
-│   ├── channels/       # Canais de mensageria (telegram, whatsapp)
-│   ├── llm/            # Router LiteLLM + prompts
-│   ├── api/            # Rotas FastAPI
-│   ├── workers/        # Celery tasks
-│   └── cli/            # CLI Typer
-├── tests/
-├── docker-compose.yml
-├── Dockerfile
-└── pyproject.toml
+│   ├── adapters/          # Database adapters (PostgreSQL, MySQL, etc.)
+│   ├── api/               # FastAPI routes
+│   ├── channels/          # Messaging channels (Telegram, WhatsApp, etc.)
+│   ├── core/              # Intent engine, alert scheduler, models
+│   ├── llm/               # LLM router and prompts
+│   ├── middleware/         # Rate limiting, logging
+│   ├── static/            # Frontend HTML/CSS/JS
+│   ├── config.py          # Settings
+│   ├── db.py              # Database session
+│   └── main.py            # FastAPI app
+├── grafana/               # Grafana provisioning
+├── tests/                 # E2E tests
+├── docker-compose.yml     # Docker services
+├── Dockerfile             # API container
+└── pyproject.toml         # Python project config
 ```
+
+## License
+
+MIT

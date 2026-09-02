@@ -270,9 +270,11 @@ class AlertScheduler:
             return
 
         # Buscar chat_id do canal
-        # Por enquanto usa o chat_id hardcoded (do telegram_receiver)
         from src.config import settings
-        chat_id = settings.telegram_chat_id or "1439720522"
+        chat_id = settings.telegram_chat_id
+        if not chat_id:
+            logger.warning("TELEGRAM_CHAT_ID não configurado")
+            return
 
         async with httpx.AsyncClient() as client:
             await client.post(
