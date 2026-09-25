@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request
-import logging
+from src.logging_config import get_logger
 
 router = APIRouter(tags=["whatsapp"])
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.whatsapp_api")
 
 
 @router.post("/whatsapp/webhook")

@@ -1,7 +1,7 @@
 """Intent Engine — Motor de decisão Regex + LLM."""
 import re
 import time
-import logging
+from src.logging_config import get_logger
 from dataclasses import dataclass
 from typing import Optional
 
@@ -9,7 +9,7 @@ from src.core.hub import hub
 from src.adapters.base import QueryResult
 from src.adapters import get_adapter
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.intent_engine")
 
 
 @dataclass

@@ -146,7 +146,7 @@ async def sync_schemas(user=Depends(get_current_user)):
                                 )
                                 synced += 1
                     except Exception as e:
-                        pass
+                        logger.warning(f"Erro ao descrever tabela {t}: {e}")
 
                 await adapter.disconnect()
             except Exception as e:

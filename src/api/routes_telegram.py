@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from src.api.auth import get_current_user
 from src.config import settings
 import src.state as state
-import logging
+from src.logging_config import get_logger
 
 router = APIRouter(tags=["telegram"])
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.telegram_api")
 
 
 @router.post("/telegram/start")

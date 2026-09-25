@@ -1,10 +1,10 @@
 """Slack Socket Mode receiver for real-time message handling."""
 import asyncio
-import logging
+from src.logging_config import get_logger
 import os
 from src.channels.slack import SlackChannel
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.slack")
 
 _socket_mode_task = None
 

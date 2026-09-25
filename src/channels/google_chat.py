@@ -1,10 +1,10 @@
 """Canal Google Chat via API REST."""
 import os
-import logging
+from src.logging_config import get_logger
 import httpx
 from src.channels.base import BaseChannel, Message
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.google_chat")
 
 
 class GoogleChatChannel(BaseChannel):

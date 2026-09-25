@@ -1,6 +1,6 @@
 """Microsoft Teams webhook receiver for incoming messages."""
 import asyncio
-import logging
+from src.logging_config import get_logger
 import hashlib
 import hmac
 from fastapi import APIRouter, Request, Header
@@ -8,7 +8,7 @@ from src.channels.teams import TeamsChannel
 from src.core.intent_engine import intent_engine
 from src.api.routes_messages import format_answer
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.teams")
 
 router = APIRouter()
 

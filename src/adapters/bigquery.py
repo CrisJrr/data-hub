@@ -1,10 +1,10 @@
 """Adapter para Google BigQuery."""
 import json
-import logging
+from src.logging_config import get_logger
 from typing import Any
 from src.adapters.base import BaseAdapter, QueryResult
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.bigquery")
 
 
 class BigQueryAdapter(BaseAdapter):

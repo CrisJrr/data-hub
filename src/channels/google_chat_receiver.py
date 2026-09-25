@@ -1,12 +1,12 @@
 """Google Chat webhook receiver for incoming messages."""
 import asyncio
-import logging
+from src.logging_config import get_logger
 from fastapi import APIRouter, Request
 from src.channels.google_chat import GoogleChatChannel
 from src.core.intent_engine import intent_engine
 from src.api.routes_messages import format_answer
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.google_chat")
 
 router = APIRouter()
 

@@ -1,0 +1,12 @@
+"""Database session management for Data Hub."""
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from src.config import settings
+
+engine = create_async_engine(settings.database_url, echo=False)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+async def get_db():
+    """Dependency pra FastAPI: yield um session async."""
+    async with async_session() as session:
+        yield session

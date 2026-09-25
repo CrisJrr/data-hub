@@ -39,8 +39,8 @@ async def _get_active_provider() -> dict | None:
                     "provider": row[0], "model": row[1], "api_key": row[2],
                     "api_base": row[3], "max_tokens": row[4], "temperature": row[5]
                 }
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Nenhum provider LLM no banco: {e}")
     return None
 
 

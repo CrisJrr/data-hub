@@ -1,6 +1,9 @@
 """Queries centralizadas — evita SQL espalhado pelo código."""
 from sqlalchemy import text
 from src.db import async_session
+from src.logging_config import get_logger
+
+logger = get_logger("datahub.queries")
 
 
 async def load_schema_configs() -> tuple[dict, dict]:
@@ -24,8 +27,8 @@ async def load_schema_configs() -> tuple[dict, dict]:
                 else:
                     key = f"{row[0]}.{row[1]}.{row[2]}"
                     table_configs[key] = {"description": row[3], "is_active": row[4]}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Erro ao carregar schema/table configs: {e}")
     return schema_configs, table_configs
 
 

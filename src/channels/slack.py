@@ -1,9 +1,9 @@
 """Canal Slack via Bolt for Python (Socket Mode)."""
 import os
-import logging
+from src.logging_config import get_logger
 from src.channels.base import BaseChannel, Message
 
-logger = logging.getLogger(__name__)
+logger = get_logger("datahub.slack")
 
 
 class SlackChannel(BaseChannel):
