@@ -148,6 +148,11 @@ class AlertScheduler:
                     should_execute = True
 
                 if should_execute:
+                    # Cooldown: não executar se última vez foi há menos de 1 minuto
+                    if last_checked:
+                        since_last = (now - last_checked).total_seconds()
+                        if since_last < 60:
+                            continue
                     # Execute a regra
                     await self._execute_rule(rule)
 
@@ -284,7 +289,10 @@ class AlertScheduler:
             )
 
     async def _send_whatsapp(self, config: dict, message: str):
-        """Envia mensagem via WhatsApp (Evolution API)."""
+        """Envia mensagem via WhatsApp (Evolution API).
+
+        Usa apenas recipients da whitelist que são do tipo 'individual'.
+        """
         import httpx
 
         api_url = config.get("api_url", "http://evolution:8080")
@@ -294,18 +302,33 @@ class AlertScheduler:
         if not api_key or not instance:
             return
 
-        # Buscar número de destino (por enquanto hardcoded)
-        # Em produção, seria configurável por canal
+        # Buscar números autorizados da whitelist
+        from src.db import async_session
+        from sqlalchemy import text
+        try:
+            async with async_session() as session:
+                result = await session.execute(
+                    text("SELECT number FROM whatsapp_recipients WHERE is_active = true AND recipient_type = 'individual'")
+                )
+                numbers = [row[0] for row in result.fetchall()]
+        except Exception:
+            numbers = []
+
+        if not numbers:
+            logger.warning("WhatsApp alert: no recipients configured, skipping")
+            return
+
         async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{api_url}/message/sendText/{instance}",
-                headers={"apikey": api_key},
-                json={
-                    "number": "5511999999999",  # Placeholder
-                    "text": message,
-                },
-                timeout=10,
-            )
+            for number in numbers:
+                try:
+                    await client.post(
+                        f"{api_url}/message/sendText/{instance}",
+                        headers={"apikey": api_key},
+                        json={"number": number, "text": message},
+                        timeout=10,
+                    )
+                except Exception as e:
+                    logger.error(f"WhatsApp alert send failed for {number}: {e}")
 
     async def _save_history(
         self,
