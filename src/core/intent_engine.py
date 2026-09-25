@@ -32,7 +32,6 @@ class IntentEngine:
     """
 
     def __init__(self, rules: list[dict], llm_enabled: bool = True):
-        # Ordena por prioridade (maior primeiro)
         self.rules = sorted(rules, key=lambda r: r.get("priority", 0), reverse=True)
         self.llm_enabled = llm_enabled
 
@@ -50,27 +49,14 @@ class IntentEngine:
 
             if match:
                 logger.info(f"Regex match: rule '{rule.get('name')}' pattern='{pattern}'")
-
-                # Preenche placeholders na query
-                query = rule.get("query_template", "")
-                for key, value in match.groupdict().items():
-                    query = query.replace(f"{{{key}}}", value)
-
-                # Se tem placeholders não preenchidos, usa o match inteiro
-                if "{" in query and "}" in query:
-                    full_match = match.group(0)
-                    query = re.sub(r"\{[^}]+\}", full_match, query)
-
+                query = self._fill_query(rule.get("query_template", ""), match)
                 conn_name = target_connection or rule.get("connection")
                 result = await self._execute_query(conn_name, query)
                 latency = (time.time() - start) * 1000
 
                 return IntentResult(
-                    success=True,
-                    method="regex",
-                    query=query,
-                    result=result,
-                    latency_ms=latency,
+                    success=True, method="regex", query=query,
+                    result=result, latency_ms=latency,
                     rule_name=rule.get("name", ""),
                 )
 
@@ -80,27 +66,29 @@ class IntentEngine:
 
         latency = (time.time() - start) * 1000
         return IntentResult(
-            success=False,
-            method="none",
-            query="",
+            success=False, method="none", query="",
             error="Nenhuma regra regex encontrada e LLM desabilitado",
             latency_ms=latency,
         )
+
+    def _fill_query(self, template: str, match) -> str:
+        """Preenche placeholders na query template."""
+        query = template
+        for key, value in match.groupdict().items():
+            query = query.replace(f"{{{key}}}", value)
+        if "{" in query and "}" in query:
+            full_match = match.group(0)
+            query = re.sub(r"\{[^}]+\}", full_match, query)
+        return query
 
     async def _llm_fallback(
         self, message: str, target_connection: str, start: float
     ) -> IntentResult:
         """Interpreta via LLM e gera SQL automaticamente."""
         from src.llm.router import generate_sql, build_schema_summary
-        from src.db import async_session
-        from sqlalchemy import text
+        from src.db.queries import load_schema_configs, load_business_context
 
-        # Pega schema de todas as conexões (ou só da alvo)
-        if target_connection and hub.adapters.exists(target_connection):
-            conn_names = [target_connection]
-        else:
-            conn_names = hub.adapters.list_names()
-
+        conn_names = self._get_connection_names(target_connection)
         if not conn_names:
             latency = (time.time() - start) * 1000
             return IntentResult(
@@ -108,59 +96,21 @@ class IntentEngine:
                 error="Nenhum adapter registrado", latency_ms=latency,
             )
 
-        # Carrega configs de schemas, tabelas e contexto de negócio do banco
-        schema_configs = {}
-        table_configs = {}
-        business_context = ""
-        try:
-            async with async_session() as session:
-                result = await session.execute(
-                    text("SELECT connection_name, schema_name, table_name, description, is_active FROM schema_configs")
-                )
-                for row in result.fetchall():
-                    if row[2] is None:
-                        # Schema-level config
-                        key = f"{row[0]}.{row[1]}"
-                        schema_configs[key] = {"description": row[3], "is_active": row[4]}
-                    else:
-                        # Table-level config
-                        key = f"{row[0]}.{row[1]}.{row[2]}"
-                        table_configs[key] = {"description": row[3], "is_active": row[4]}
+        # Carrega configs do banco
+        schema_configs, table_configs = await load_schema_configs()
+        business_context = await load_business_context()
 
-                # Carrega contexto de negócio
-                result = await session.execute(
-                    text("SELECT value FROM app_settings WHERE key = 'business_context'")
-                )
-                row = result.fetchone()
-                if row:
-                    business_context = row[0]
-        except Exception:
-            pass  # Tabela pode não existir ainda
-
-        # Monta schema combinado de todas as conexões (filtrando schemas desabilitados)
-        all_schemas = []
-        for cn in conn_names:
-            config = hub.adapters.get(cn)
-            try:
-                adapter = get_adapter(config["db_type"], config.get("config", config))
-                await adapter.connect()
-                schema = await build_schema_summary(adapter, cn, schema_configs, table_configs)
-                await adapter.disconnect()
-                if schema.strip():
-                    all_schemas.append(f"=== Conexão: {cn} ===\n{schema}")
-            except Exception as e:
-                logger.warning(f"Erro ao obter schema de {cn}: {e}")
-
-        if not all_schemas:
+        # Monta schema de todas as conexões
+        combined_schema = await self._build_all_schemas(conn_names, schema_configs, table_configs)
+        if not combined_schema:
             latency = (time.time() - start) * 1000
             return IntentResult(
                 success=False, method="llm", query="",
                 error="Nenhum schema disponível", latency_ms=latency,
             )
 
-        combined_schema = "\n\n".join(all_schemas)
+        # Gera SQL via LLM
         response = await generate_sql(message, combined_schema, business_context)
-
         if not response["success"]:
             latency = (time.time() - start) * 1000
             return IntentResult(
@@ -168,8 +118,8 @@ class IntentEngine:
                 error=response["error"], latency_ms=latency,
             )
 
+        # Executa em todas as conexões, usa a primeira que funcionar
         query = response["query"]
-        # Tenta executar em todas as conexões, usa a primeira que funcionar
         last_error = None
         for cn in conn_names:
             try:
@@ -188,6 +138,31 @@ class IntentEngine:
             success=False, method="llm", query=query,
             error=f"Query gerada mas falhou: {last_error}", latency_ms=latency,
         )
+
+    def _get_connection_names(self, target_connection: str = None) -> list[str]:
+        """Retorna nomes das conexões alvo."""
+        if target_connection and hub.adapters.exists(target_connection):
+            return [target_connection]
+        return hub.adapters.list_names()
+
+    async def _build_all_schemas(
+        self, conn_names: list[str], schema_configs: dict, table_configs: dict
+    ) -> str:
+        """Monta schema combinado de todas as conexões."""
+        from src.llm.router import build_schema_summary
+        all_schemas = []
+        for cn in conn_names:
+            config = hub.adapters.get(cn)
+            try:
+                adapter = get_adapter(config["db_type"], config.get("config", config))
+                await adapter.connect()
+                schema = await build_schema_summary(adapter, cn, schema_configs, table_configs)
+                await adapter.disconnect()
+                if schema.strip():
+                    all_schemas.append(f"=== Conexão: {cn} ===\n{schema}")
+            except Exception as e:
+                logger.warning(f"Erro ao obter schema de {cn}: {e}")
+        return "\n\n".join(all_schemas)
 
     async def _execute_query(self, conn_name: str, query: str) -> QueryResult:
         """Executa query num adapter específico."""

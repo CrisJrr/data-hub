@@ -159,7 +159,7 @@ class HubTelegramLoop:
 
         # Broadcast WebSocket: mensagem recebida
         try:
-            from src.main import broadcast_event
+            from src.ws import broadcast_event
             await broadcast_event("message_received", {
                 "channel": "telegram",
                 "user": user,
@@ -186,7 +186,7 @@ class HubTelegramLoop:
 
         # Broadcast WebSocket: resposta enviada
         try:
-            from src.main import broadcast_event
+            from src.ws import broadcast_event
             await broadcast_event("message_sent", {
                 "channel": "telegram",
                 "chat_id": chat_id,

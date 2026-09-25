@@ -1,5 +1,4 @@
-from fastapi import FastAPI
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -13,45 +12,16 @@ import redis.asyncio as aioredis
 setup_logging(os.getenv("ENVIRONMENT", "production"))
 logger = get_logger("datahub.main")
 
+# Telegram polling state (shared module)
+import src.state as state
 
-# Telegram polling state
-_telegram_task = None
-_telegram_loop = None
-
-# Redis client for rate limiting
-_redis_client = None
-
-# WebSocket connections manager
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-        logger.info("websocket_connected", extra={"extra_data": {"total": len(self.active_connections)}})
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-        logger.info("websocket_disconnected", extra={"extra_data": {"total": len(self.active_connections)}})
-
-    async def broadcast(self, message: dict):
-        disconnected = []
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception:
-                disconnected.append(connection)
-        for conn in disconnected:
-            self.active_connections.remove(conn)
-
-ws_manager = ConnectionManager()
+# WebSocket manager
+from src.ws import ws_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle."""
-    global _telegram_task, _telegram_loop
     os.makedirs("data", exist_ok=True)
 
     # Inicializa DB interno (SQLite)
@@ -144,12 +114,12 @@ async def lifespan(app: FastAPI):
     if settings.telegram_bot_token:
         import asyncio
         from src.channels.telegram_receiver import HubTelegramLoop
-        _telegram_loop = HubTelegramLoop(settings.telegram_bot_token, poll_interval=2.0)
-        _telegram_task = asyncio.create_task(_telegram_loop.start())
+        state._telegram_loop = HubTelegramLoop(settings.telegram_bot_token, poll_interval=2.0)
+        state._telegram_task = asyncio.create_task(state._telegram_loop.start())
         logger.info("telegram_polling_started")
 
     # Connect to Redis for rate limiting
-    global _redis_client
+    _redis_client = None
     try:
         _redis_client = aioredis.from_url(
             settings.redis_url or "redis://redis:6379/0",
@@ -161,7 +131,6 @@ async def lifespan(app: FastAPI):
         logger.info("redis_connected", extra={"extra_data": {"url": settings.redis_url}})
     except Exception as e:
         logger.warning("redis_unavailable", extra={"extra_data": {"error": str(e)}})
-        _redis_client = None
         app.state.redis = None
 
     yield
@@ -169,10 +138,10 @@ async def lifespan(app: FastAPI):
     # Shutdown
     from src.core.alert_scheduler import alert_scheduler
     alert_scheduler.stop()
-    if _telegram_loop:
-        _telegram_loop.stop()
-    if _telegram_task and not _telegram_task.done():
-        _telegram_task.cancel()
+    if state._telegram_loop:
+        state._telegram_loop.stop()
+    if state._telegram_task and not state._telegram_task.done():
+        state._telegram_task.cancel()
     if _redis_client:
         await _redis_client.close()
     logger.info("shutdown_complete")
@@ -205,6 +174,8 @@ app.add_middleware(RequestLoggingMiddleware)
 
 # Registra todas as rotas
 from src.api import routes_connections, routes_channels, routes_rules, routes_messages, routes_query, routes_auth, routes_alerts, routes_schemas, routes_settings, routes_llm_providers, routes_whatsapp_recipients, routes_whatsapp_status
+from src.api.routes_telegram import router as telegram_router
+from src.api.routes_whatsapp import router as whatsapp_router
 
 app.include_router(routes_auth.router)
 app.include_router(routes_connections.router)
@@ -218,27 +189,8 @@ app.include_router(routes_settings.router)
 app.include_router(routes_llm_providers.router)
 app.include_router(routes_whatsapp_recipients.router)
 app.include_router(routes_whatsapp_status.router)
-
-
-# ── Evolution API Webhook Receiver ──────────────────────────────
-from fastapi import Request
-
-@app.post("/whatsapp/webhook")
-async def whatsapp_webhook(request: Request):
-    """Receive Evolution API webhook events for WhatsApp messages."""
-    import logging
-    _wlog = logging.getLogger("whatsapp.webhook")
-    try:
-        payload = await request.json()
-        _wlog.info(f"Webhook received: event={payload.get('event')}, instance={payload.get('instance')}")
-
-        from src.channels.whatsapp_receiver import handle_webhook_event
-        await handle_webhook_event(payload)
-
-        return {"status": "ok"}
-    except Exception as e:
-        _wlog.error(f"Webhook processing error: {e}")
-        return {"status": "error", "message": str(e)}
+app.include_router(telegram_router)
+app.include_router(whatsapp_router)
 
 
 @app.get("/health")
@@ -253,7 +205,7 @@ async def health():
         "adapters": hub.adapters.list_names(),
         "channels": hub.channels.list_names(),
         "rules": hub.rules.list_names(),
-        "telegram_polling": _telegram_task is not None and not _telegram_task.done(),
+        "telegram_polling": state._telegram_task is not None and not state._telegram_task.done(),
     }
 
 
@@ -278,49 +230,6 @@ async def about_page():
 
 
 # =============================================
-# Telegram Polling Endpoints
-# =============================================
-
-from fastapi import Depends
-from src.api.auth import get_current_user
-
-@app.post("/telegram/start")
-async def start_telegram_polling(user=Depends(get_current_user)):
-    global _telegram_task, _telegram_loop
-
-    if _telegram_task and not _telegram_task.done():
-        return {"status": "already_running", "message": "Telegram polling ja esta ativo"}
-
-    if not settings.telegram_bot_token:
-        return {"status": "error", "message": "TELEGRAM_BOT_TOKEN nao configurado no .env"}
-
-    import asyncio
-    from src.channels.telegram_receiver import HubTelegramLoop
-
-    _telegram_loop = HubTelegramLoop(settings.telegram_bot_token, poll_interval=2.0)
-    _telegram_task = asyncio.create_task(_telegram_loop.start())
-
-    return {"status": "started", "message": "Telegram polling iniciado"}
-
-
-@app.post("/telegram/stop")
-async def stop_telegram_polling(user=Depends(get_current_user)):
-    global _telegram_task, _telegram_loop
-
-    if not _telegram_loop:
-        return {"status": "not_running", "message": "Telegram polling nao esta ativo"}
-
-    _telegram_loop.stop()
-    if _telegram_task and not _telegram_task.done():
-        _telegram_task.cancel()
-
-    _telegram_task = None
-    _telegram_loop = None
-
-    return {"status": "stopped", "message": "Telegram polling parado"}
-
-
-# =============================================
 # WebSocket Endpoint
 # =============================================
 
@@ -336,21 +245,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
-
-
-# Helper para broadcast via WebSocket (chamar de qualquer lugar)
-async def broadcast_event(event_type: str, data: dict):
-    """Envia evento para todos os clients conectados."""
-    await ws_manager.broadcast({"type": event_type, "data": data})
-
-
-@app.get("/telegram/status")
-async def telegram_status(user=Depends(get_current_user)):
-    running = _telegram_task is not None and not _telegram_task.done()
-    return {
-        "polling": running,
-        "token_configured": bool(settings.telegram_bot_token),
-    }
 
 
 # Mount static files AFTER routes so API endpoints take priority
